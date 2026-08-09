@@ -14,6 +14,18 @@ FIREWORKS_URL = "https://api.fireworks.ai/inference/v1/chat/completions"
 FIREWORKS_TIMEOUT_SECONDS = 30.0
 
 
+def _normalize_level(value: Any, *, default: str = "low") -> str:
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        if lowered in {"low", "medium", "high"}:
+            return lowered
+        if any(token in lowered for token in {"high", "severe", "critical", "major", "catastrophic"}):
+            return "high"
+        if any(token in lowered for token in {"medium", "moderate", "elevated", "significant"}):
+            return "medium"
+    return default
+
+
 def _extract_json(text: str) -> str:
     # Fireworks responses sometimes wrap JSON in markdown fences or include comments.
     if not text:
@@ -30,7 +42,7 @@ def _build_system_prompt() -> str:
 Return ONLY a single JSON object with these exact keys:
 - summary: short human summary
 - assumptions: array of strings
-- plan: array of objects {step:int, action:string, why:string, risk:string}
+ - plan: array of objects {step:int, action:string, why:string, risk:"low"|"medium"|"high"}
 - risks: array of strings
 - next_actions: array of strings
 - confidence: one of [low, medium, high]
@@ -110,7 +122,17 @@ async def generate_plan(
     except json.JSONDecodeError as exc:
         raise RuntimeError(f"Model output is not valid JSON: {exc}") from exc
 
-    # Ensure strict shape and coerce keys.
+    # Normalize output before strict shape validation.
+    if isinstance(parsed, dict):
+        if isinstance(parsed.get("confidence"), str):
+            parsed["confidence"] = _normalize_level(parsed.get("confidence"), default="low")
+
+        plan = parsed.get("plan")
+        if isinstance(plan, list):
+            for step in plan:
+                if isinstance(step, dict) and "risk" in step:
+                    step["risk"] = _normalize_level(step.get("risk"), default="low")
+
     try:
         return PlanResponse.model_validate(parsed)
     except Exception as exc:

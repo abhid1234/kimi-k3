@@ -68,6 +68,27 @@ class FireworksClientTests(unittest.IsolatedAsyncioTestCase):
         result = await generate_plan("Build a product plan", constraints="low budget", context="solo", tone="clear")
         self.assertEqual(result.summary, "Do it in 3 steps.")
 
+    @patch("app.fireworks_client.httpx.AsyncClient", autospec=True)
+    async def test_generate_plan_normalizes_risk_and_confidence(self, mock_client):  # type: ignore[override]
+        payload = {
+            "summary": "Launch in 14 days.",
+            "assumptions": ["Mature MVP mindset"],
+            "plan": [
+                {"step": 1, "action": "Publish landing", "why": "early signal", "risk": "Landing page may get low CTR"},
+                {"step": 2, "action": "Run onboarding", "why": "activation", "risk": "High chance of user churn"},
+            ],
+            "risks": ["risk text"],
+            "next_actions": ["Ship"],
+            "confidence": "critical",
+        }
+        instance = DummyClient(response_payload={"choices": [{"message": {"content": json.dumps(payload)}}]})
+        mock_client.return_value = instance
+
+        result = await generate_plan("Build a 14-day launch plan", constraints="none", context="solo founder", tone="clear")
+        self.assertEqual(result.plan[0].risk, "low")
+        self.assertEqual(result.plan[1].risk, "high")
+        self.assertEqual(result.confidence, "low")
+
 
 if __name__ == "__main__":
     unittest.main()
