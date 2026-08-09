@@ -1,5 +1,6 @@
 import json
 import sqlite3
+import os
 from contextlib import contextmanager
 from pathlib import Path
 from datetime import date
@@ -7,6 +8,9 @@ from typing import Any
 
 
 def default_db_path() -> Path:
+    from_env = os.environ.get("KIMI_DB_PATH")
+    if from_env:
+        return Path(from_env)
     return Path(__file__).resolve().parent.parent / "data" / "runs.db"
 
 

@@ -17,7 +17,7 @@ from .storage import get_conn, ensure_schema, list_runs, write_run, get_daily_sp
 
 ROOT = Path(__file__).resolve().parent.parent
 STATIC_DIR = ROOT / "static"
-DATA_DIR = ROOT / "data"
+DATA_DIR = Path(os.environ.get("KIMI_DB_PATH", str(ROOT / "data" / "runs.db"))).parent
 
 app = FastAPI(title="Kimi K3 Planner")
 app.add_middleware(
@@ -48,7 +48,7 @@ def index() -> FileResponse:
 
 @app.post("/api/plan", response_model=RunResponse)
 async def create_plan(payload: PlanRequest) -> RunResponse:
-    model = os.environ.get("FIREWORKS_MODEL", "accounts/fireworks/models/llama-v3p3-70b-instruct")
+    model = os.environ.get("FIREWORKS_MODEL", "accounts/fireworks/models/gpt-oss-120b")
     daily_budget_usd = float(os.environ.get("KIMI_DAILY_BUDGET_USD", "5.0"))
     estimated_cost_usd = float(os.environ.get("KIMI_ESTIMATED_COST_USD", "0.02"))
     if daily_budget_usd <= 0:
