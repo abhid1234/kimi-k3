@@ -24,6 +24,43 @@ one-click reuse, and explicit loading/empty/error/budget states. Screenshots in
 `04`/`05` show representative plan data rendered through the real render path
 (captured while the Fireworks account was suspended, so no live generation).
 
+### Frontend revamp — risk elevation (2026-08-09)
+
+The plan visualization gained a signature element: a **risk-elevation strip**
+drawn above the step rail. The plan is rendered as terrain — x is step order,
+y is risk severity — so the route literally climbs into peaks where the plan
+gets dangerous, in the style of a reaction-coordinate energy diagram. Design
+decisions:
+
+- **One signature, everything else quiet.** The strip carries the excitement;
+  the step rail, aux sections, and composer keep their existing simplicity.
+- **Structure encodes information.** Peak height maps to the same low/medium/high
+  severities as the step badges; the shaded area under the trail and the
+  HIGH/MED/LOW gridlines make the shape readable at a glance.
+- **Two-way sync.** Hovering or keyboard-focusing a waypoint highlights its step
+  card (and vice versa); Enter/Space on a waypoint jumps to the step. Waypoints
+  are real focusable controls with per-step `aria-label`s, and the strip has a
+  text summary for assistive tech.
+- **Compare mode gets mini strips**, so three strategies read as three visibly
+  different risk terrains next to the winner highlight.
+- **Motion is an orchestrated moment, not ambience**: the trail draws in once
+  (~0.9s), waypoints pop staggered, step cards follow — all disabled under
+  `prefers-reduced-motion`.
+- **Demo mode for testability**: `/?demo=plan` and `/?demo=compare` render
+  bundled sample data through the real render path with zero API calls, clearly
+  labelled ("Sample data — nothing was sent to the API"). Used for screenshots
+  and demos when the upstream model account is unavailable.
+
+Frontend contract tests live in `tests/test_frontend.py` (controls, labels,
+a11y basics, risk badge coverage, strip presence, unchanged `/api/plan` payload
+shape). New screenshots:
+
+| | |
+|---|---|
+| `07-plan-risk-elevation.png` | Plan output with the risk-elevation strip (desktop) |
+| `08-compare-risk-profiles.png` | Compare mode with per-variant mini risk profiles |
+| `09-mobile-risk-elevation.png` | Mobile layout (390px) with the strip |
+
 ## Run locally
 
 ```bash

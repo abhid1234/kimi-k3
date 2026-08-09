@@ -729,6 +729,74 @@
         clip: rect(0 0 0 0); white-space: nowrap; border: 0;
       }
 
+      /* ---------- Risk elevation strip (signature) ---------- */
+      .strip { margin: 2px 0 24px; }
+      .strip svg { display: block; width: 100%; height: auto; overflow: visible; }
+      .strip .grid-line { stroke: var(--line-soft); stroke-width: 1; }
+      .strip .grid-label {
+        font: 500 9px var(--mono);
+        fill: var(--ink-faint);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .strip .trail {
+        fill: none;
+        stroke: var(--signal-bright);
+        stroke-width: 2;
+        stroke-linecap: round;
+      }
+      .strip .trail-shade {
+        fill: var(--signal-wash);
+        opacity: 0.55;
+        stroke: none;
+      }
+      .strip .wp { cursor: pointer; outline: none; }
+      .strip .wp .halo { fill: none; stroke: transparent; stroke-width: 2; }
+      .strip .wp circle.core { stroke-width: 2.5; fill: var(--panel); }
+      .strip .wp.r-low circle.core { stroke: var(--risk-low); }
+      .strip .wp.r-medium circle.core { stroke: var(--risk-med); }
+      .strip .wp.r-high circle.core { stroke: var(--risk-high); fill: var(--risk-high-wash); }
+      .strip .wp text {
+        font: 600 10px var(--mono);
+        fill: var(--ink-soft);
+        text-anchor: middle;
+      }
+      .strip .wp:hover .halo,
+      .strip .wp:focus-visible .halo,
+      .strip .wp.is-hot .halo { stroke: var(--signal); }
+      .strip .wp:focus-visible circle.core { stroke-width: 4; }
+      .strip .flag { font-size: 13px; fill: var(--signal-bright); }
+      /* draw-in: trail uses pathLength="1", so dasharray/dashoffset are normalized */
+      .strip.is-live .trail {
+        stroke-dasharray: 1;
+        stroke-dashoffset: 1;
+        animation: trail-draw 900ms ease-out forwards;
+      }
+      .strip.is-live .trail-shade { opacity: 0; animation: shade-in 500ms ease-out 700ms forwards; }
+      .strip.is-live .wp,
+      .strip.is-live .flag {
+        opacity: 0;
+        animation: wp-pop 280ms ease-out forwards;
+        animation-delay: calc(140ms + 110ms * var(--i, 0));
+      }
+      @keyframes trail-draw { to { stroke-dashoffset: 0; } }
+      @keyframes shade-in { to { opacity: 0.55; } }
+      @keyframes wp-pop { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+
+      /* strip ↔ step-card two-way highlight */
+      .route li.is-hot .waypoint {
+        border-color: var(--signal);
+        box-shadow: 0 0 0 4px var(--signal-wash);
+      }
+      .route li.is-hot .step-head strong { color: var(--signal); }
+      .plan-enter .route li {
+        animation: step-in 320ms ease-out backwards;
+        animation-delay: calc(220ms + 90ms * var(--i, 0));
+      }
+      @keyframes step-in { from { opacity: 0; transform: translateY(6px); } }
+
+      .variant .strip { margin: 0 0 16px; }
+
       /* ---------- Responsive ---------- */
       @media (max-width: 960px) {
         .workspace { grid-template-columns: 1fr; }
@@ -749,6 +817,11 @@
         html { scroll-behavior: auto; }
         .sk { animation: none; }
         .btn, .budget-fill { transition: none; }
+        .strip.is-live .trail,
+        .strip.is-live .trail-shade,
+        .strip.is-live .wp,
+        .strip.is-live .flag,
+        .plan-enter .route li { animation: none; opacity: 1; stroke-dashoffset: 0; }
       }
     </style>
   </head>
@@ -1004,6 +1077,7 @@
           lastResponse = data;
           renderMeta(data);
           outputZone.innerHTML = renderPlan(data.data || {});
+          activatePlanView(outputZone);
           resultTools.hidden = false;
           rawJson.textContent = formatRaw(data.raw_output);
           setStatus("Plan ready.");
@@ -1047,6 +1121,7 @@
               renderPlan(body.data || {}, { compact: true }) +
               `</div>`;
           }).join("");
+          activatePlanView(comparePlans);
           const okCount = settled.filter((s) => s.status === "fulfilled").length;
           setStatus(okCount === 3 ? "Three strategies ready — highest-scoring variant is outlined." : `${okCount}/3 variants completed.`, okCount === 0);
           await loadRuns();
@@ -1109,7 +1184,7 @@
         const compact = opts && opts.compact;
         const conf = (data.confidence || "low").toLowerCase();
         const steps = (data.plan || []).map((p, i, arr) =>
-          `<li><span class="waypoint" aria-hidden="true">${i === arr.length - 1 ? "⚑" : escapeHtml(String(p.step))}</span>` +
+          `<li data-step="${i}" style="--i:${i}"><span class="waypoint" aria-hidden="true">${i === arr.length - 1 ? "⚑" : escapeHtml(String(p.step))}</span>` +
           `<div class="step-head"><strong>${escapeHtml(p.action)}</strong>` +
           `<span class="risk risk-${escapeHtml(p.risk || "low")}">${escapeHtml(p.risk || "low")}</span></div>` +
           `<p class="step-why">${escapeHtml(p.why || "")}</p></li>`
@@ -1120,9 +1195,10 @@
           `<span class="confidence c-${escapeHtml(conf)}"><span class="bars" aria-hidden="true"><i></i><i></i><i></i></span>${escapeHtml(conf)} confidence</span>` +
           `<p>${escapeHtml(data.summary || "")}</p></div>`;
 
+        const strip = renderRouteStrip(data.plan || [], { mini: compact });
         const rail = `<ol class="route" aria-label="Plan steps">${steps}</ol>`;
 
-        if (compact) return summary + rail;
+        if (compact) return `<div class="plan-view">` + summary + strip + rail + `</div>`;
 
         const aux =
           `<div class="aux-grid">` +
@@ -1135,7 +1211,96 @@
           (data.next_actions || []).slice(0, 5).map((x) => `<li>${escapeHtml(x)}</li>`).join("") +
           `</ol></div>`;
 
-        return summary + rail + aux + next;
+        return `<div class="plan-view">` + summary + strip + rail + aux + next + `</div>`;
+      }
+
+      /* ---------- risk elevation strip (signature) ----------
+         The plan drawn as terrain: x = step order, y = risk severity.
+         Peaks are the dangerous stretches of the route. */
+      function renderRouteStrip(steps, opts) {
+        if (!Array.isArray(steps) || steps.length === 0) return "";
+        const mini = opts && opts.mini;
+        const W = 640, H = mini ? 96 : 132;
+        const padX = 40, padTop = 20, padBot = 24;
+        const yFor = { low: H - padBot, medium: (H - padBot + padTop) / 2, high: padTop };
+        const n = steps.length;
+        const pts = steps.map((p, i) => {
+          const risk = String(p.risk || "low").toLowerCase();
+          return {
+            x: n === 1 ? W / 2 : padX + (i * (W - 2 * padX)) / (n - 1),
+            y: yFor[risk] != null ? yFor[risk] : yFor.low,
+            risk: yFor[risk] != null ? risk : "low",
+            i,
+            step: p.step,
+            action: p.action || ""
+          };
+        });
+
+        let d = `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`;
+        for (let i = 0; i < pts.length - 1; i++) {
+          const p0 = pts[Math.max(0, i - 1)], p1 = pts[i];
+          const p2 = pts[i + 1], p3 = pts[Math.min(pts.length - 1, i + 2)];
+          const c1x = p1.x + (p2.x - p0.x) / 6, c1y = p1.y + (p2.y - p0.y) / 6;
+          const c2x = p2.x - (p3.x - p1.x) / 6, c2y = p2.y - (p3.y - p1.y) / 6;
+          d += ` C ${c1x.toFixed(1)} ${c1y.toFixed(1)}, ${c2x.toFixed(1)} ${c2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+        }
+        const shade = n > 1
+          ? `<path class="trail-shade" d="${d} L ${pts[n - 1].x.toFixed(1)} ${H - padBot + 8} L ${pts[0].x.toFixed(1)} ${H - padBot + 8} Z" />`
+          : "";
+
+        const grid = [["high", yFor.high], ["med", yFor.medium], ["low", yFor.low]].map(([label, y]) =>
+          `<line class="grid-line" x1="${padX - 8}" y1="${y}" x2="${W - padX + 8}" y2="${y}" />` +
+          `<text class="grid-label" x="0" y="${y + 3}">${label}</text>`
+        ).join("");
+
+        const dots = pts.map((p) =>
+          `<g class="wp r-${p.risk}" data-step="${p.i}" tabindex="0" role="button" style="--i:${p.i}"` +
+          ` aria-label="Step ${escapeHtml(String(p.step))}: ${encodeAttr(p.action)} — ${p.risk} risk. Jump to step.">` +
+          `<circle class="halo" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="12" />` +
+          `<circle class="core" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="6" />` +
+          (mini ? "" : `<text x="${p.x.toFixed(1)}" y="${(p.y - 13).toFixed(1)}">${escapeHtml(String(p.step))}</text>`) +
+          `</g>`
+        ).join("");
+
+        const last = pts[n - 1];
+        const flag = `<text class="flag" x="${(last.x + 8).toFixed(1)}" y="${(last.y - 9).toFixed(1)}" style="--i:${n}" aria-hidden="true">⚑</text>`;
+
+        const counts = pts.reduce((acc, p) => { acc[p.risk] = (acc[p.risk] || 0) + 1; return acc; }, {});
+        const summary = ["low", "medium", "high"].filter((r) => counts[r]).map((r) => `${counts[r]} ${r}`).join(", ");
+        const label = `Risk elevation across ${n} steps (${summary}). Peaks are higher-risk steps.`;
+
+        return `<figure class="strip">` +
+          `<svg viewBox="0 0 ${W} ${H}" role="group" aria-label="${encodeAttr(label)}">` +
+          grid + shade + `<path class="trail" d="${d}" pathLength="1" />` + dots + flag +
+          `</svg><figcaption class="visually-hidden">${escapeHtml(label)}</figcaption></figure>`;
+      }
+
+      function activatePlanView(root) {
+        const motionOk = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        root.querySelectorAll(".plan-view").forEach((view) => {
+          if (motionOk) view.classList.add("plan-enter");
+          const strip = view.querySelector(".strip");
+          if (!strip) return;
+          if (motionOk) strip.classList.add("is-live");
+          strip.querySelectorAll(".wp").forEach((wp) => {
+            const li = view.querySelector(`.route li[data-step="${wp.dataset.step}"]`);
+            if (!li) return;
+            const hot = (on) => {
+              li.classList.toggle("is-hot", on);
+              wp.classList.toggle("is-hot", on);
+            };
+            wp.addEventListener("mouseenter", () => hot(true));
+            wp.addEventListener("mouseleave", () => hot(false));
+            wp.addEventListener("focus", () => hot(true));
+            wp.addEventListener("blur", () => hot(false));
+            wp.addEventListener("click", () => li.scrollIntoView({ behavior: motionOk ? "smooth" : "auto", block: "center" }));
+            wp.addEventListener("keydown", (e) => {
+              if (e.key === "Enter" || e.key === " ") { e.preventDefault(); wp.click(); }
+            });
+            li.addEventListener("mouseenter", () => hot(true));
+            li.addEventListener("mouseleave", () => hot(false));
+          });
+        });
       }
 
       function renderErrorState(e) {
@@ -1303,6 +1468,56 @@
         return escapeHtml(value).replaceAll('"', "&quot;").replaceAll("'", "&#39;");
       }
 
+      /* ---------- demo mode (frontend-only) ----------
+         ?demo=plan | ?demo=compare renders bundled sample data through the
+         real render path, clearly labelled, with zero API calls. Useful for
+         demos and screenshots when the upstream model account is unavailable. */
+      const DEMO_PLAN = {
+        summary: "Ship a paid AI side project to 100 users in 30 days by launching an ugly-but-working MVP in week one, then iterating weekly against retention.",
+        confidence: "medium",
+        plan: [
+          { step: 1, action: "Write the one-page spec and success metric", why: "A single activation metric keeps every later decision honest.", risk: "low" },
+          { step: 2, action: "Build the MVP on a managed stack", why: "No backend experience — managed auth and DB remove the riskiest unknowns.", risk: "medium" },
+          { step: 3, action: "Launch to 3 communities the same day", why: "Concentrated launch beats a slow drip for early signal.", risk: "high" },
+          { step: 4, action: "Interview the first 10 users within 48h", why: "Retention problems show up in conversation before they show up in charts.", risk: "low" },
+          { step: 5, action: "Add payments behind the most-used feature", why: "Charge where usage already proves value.", risk: "medium" },
+          { step: 6, action: "Cut or double down weekly", why: "30 days only fits four honest iterations.", risk: "low" }
+        ],
+        assumptions: ["Builder can commit 2h/day", "The niche has at least one active community", "No compliance-sensitive data involved"],
+        risks: ["Launch day flops in all 3 communities", "Payment integration slips past week 3"],
+        next_actions: ["Draft the one-page spec tonight", "Shortlist 3 launch communities", "Set up the managed stack account"]
+      };
+
+      function bootDemo() {
+        const mode = new URLSearchParams(location.search).get("demo");
+        if (!mode) return false;
+        const fake = {
+          id: 0, status: "sample", latency_ms: 0,
+          model: "sample data — no API call",
+          data: DEMO_PLAN, raw_output: JSON.stringify(DEMO_PLAN)
+        };
+        if (mode === "compare") {
+          const variantPlan = (drop) => ({ ...DEMO_PLAN, plan: DEMO_PLAN.plan.filter((_, i) => i !== drop) });
+          comparePlans.innerHTML = ["Current constraints", "Speed-first", "Risk-minimized"].map((label, idx) =>
+            `<div class="variant${idx === 0 ? " is-winner" : ""}">` +
+            `<div class="variant-head"><h4>${escapeHtml(label)}</h4>${idx === 0 ? '<span class="winner-tag">Highest score</span>' : ""}</div>` +
+            `<div class="meta-line"><span class="chip">sample</span></div>` +
+            renderPlan(idx === 0 ? DEMO_PLAN : variantPlan(idx + 2), { compact: true }) +
+            `</div>`
+          ).join("");
+          activatePlanView(comparePlans);
+          compareResult.hidden = false;
+        } else {
+          lastResponse = fake;
+          outputZone.innerHTML = renderPlan(DEMO_PLAN);
+          activatePlanView(outputZone);
+          resultTools.hidden = false;
+          rawJson.textContent = formatRaw(fake.raw_output);
+        }
+        setStatus("Sample data — nothing was sent to the API.");
+        return true;
+      }
+
       /* ---------- boot ---------- */
       async function checkHealth() {
         try {
@@ -1318,6 +1533,7 @@
       }
       checkHealth();
       loadRuns();
+      bootDemo();
     </script>
   </body>
 </html>
