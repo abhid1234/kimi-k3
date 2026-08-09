@@ -4,6 +4,26 @@ Kimi K3 is a lightweight planning service that turns a goal into an ordered,
 actionable plan using the Fireworks API, with a simple FastAPI UI and persistent
 run history in SQLite.
 
+## UI
+
+The playground UI (`static/index.html`, no build step) is a single-page composer +
+output workspace: goal/constraints/context/tone composer with sample prompts,
+a risk-annotated route-rail plan view, 3-variant compare mode, run history with
+one-click reuse, and explicit loading/empty/error/budget states. Screenshots in
+[`docs/screenshots/`](docs/screenshots/):
+
+| | |
+|---|---|
+| `01-hero-composer-empty.png` | Hero, composer, empty + history states (desktop) |
+| `02-error-state.png` | Upstream-error state with retry |
+| `03-loading-skeleton.png` | Skeleton loading state |
+| `04-plan-output.png` | Full plan output (route rail, budget meter) |
+| `05-compare-variants.png` | 3-variant compare with winner highlight |
+| `06-mobile.png` | Mobile layout (390px) |
+
+`04`/`05` show representative plan data rendered through the real render path
+(captured while the Fireworks account was suspended, so no live generation).
+
 ## Run locally
 
 ```bash

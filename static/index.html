@@ -3,119 +3,905 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Kimi K3 Planner</title>
+    <title>Kimi K3 — goal in, route out</title>
+    <meta name="description" content="Kimi K3 turns one sentence into an ordered, risk-rated execution plan." />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='%23E4570F'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%23fff'/%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
     <style>
-      :root { font-family: system-ui, -apple-system, Segoe UI, sans-serif; color: #0f172a; }
-      body { margin: 0; padding: 24px; background: #f8fafc; }
-      .container { max-width: 1100px; margin: 0 auto; }
-      h1 { margin-top: 0; }
-      .grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; }
-      .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
-      .row { display: flex; gap: 12px; }
-      .row > div { flex: 1; }
-      label { display:block; margin: 10px 0 4px; font-weight: 600; }
-      textarea, input, button, select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font: inherit; }
-      button { background: #0f172a; color: white; cursor: pointer; font-weight: 600; border: none; margin-top: 12px; }
-      button.secondary { background: #334155; }
-      button.small { width: auto; padding: 8px 12px; margin-top: 4px; }
-      .muted { color: #64748b; font-size: 0.9rem; }
-      .pill { display: inline-block; border-radius: 999px; padding: 2px 10px; background: #e2e8f0; margin-right: 8px; }
-      .error { color: #b91c1c; }
-      code { background: #f1f5f9; padding: 0 4px; border-radius: 4px; }
-      ul { margin: 4px 0 0; }
-      .columns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-      .plan-block { border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; }
-      .meta { font-size: 0.87rem; color: #334155; margin-bottom: 8px; }
-      .chip { display: inline-block; border-radius: 999px; padding: 2px 10px; background: #0f172a; color: white; font-size: 11px; margin-right: 6px; }
-      .history-item { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px dashed #e2e8f0; padding: 8px 0; }
-      .history-item:last-child { border-bottom: 0; }
-      .left { max-width: 82%; }
-      .right { color: #64748b; white-space: nowrap; }
+      :root {
+        --paper: #eef1f4;
+        --panel: #ffffff;
+        --ink: #15222d;
+        --ink-soft: #3c4d5c;
+        --ink-faint: #64778a;
+        --line: #d6dde3;
+        --line-soft: #e5eaee;
+        --signal: #c2410c;        /* buttons, links, focus — AA on white */
+        --signal-bright: #e4570f; /* route line, markers, accents on ink */
+        --signal-wash: #fbe9df;
+        --risk-low: #2f7d4f;
+        --risk-low-wash: #e3f1e8;
+        --risk-med: #92610e;
+        --risk-med-wash: #f7ecd6;
+        --risk-high: #b3362b;
+        --risk-high-wash: #f9e4e2;
+        --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+        --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+        --display: "Archivo", "Archivo Black", var(--sans);
+        --radius: 14px;
+        --shadow: 0 1px 2px rgba(21, 34, 45, 0.06), 0 12px 32px -16px rgba(21, 34, 45, 0.25);
+      }
+
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--sans);
+        font-size: 15.5px;
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      ::selection { background: var(--signal-wash); }
+
+      :focus-visible {
+        outline: 2px solid var(--signal);
+        outline-offset: 2px;
+        border-radius: 4px;
+      }
+
+      /* ---------- Hero ---------- */
+      .hero {
+        position: relative;
+        background: var(--ink);
+        color: #f2f5f7;
+        overflow: hidden;
+        padding: 56px 24px 132px;
+      }
+      .hero-contours {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0.5;
+      }
+      .hero-inner {
+        position: relative;
+        max-width: 1160px;
+        margin: 0 auto;
+      }
+      .hero-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 44px;
+      }
+      .wordmark {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-family: var(--display);
+        font-variation-settings: "wdth" 120, "wght" 800;
+        letter-spacing: 0.14em;
+        font-size: 15px;
+      }
+      .wordmark .dot {
+        width: 14px; height: 14px;
+        border-radius: 50%;
+        background: var(--signal-bright);
+        box-shadow: inset 0 0 0 3.5px var(--ink), 0 0 0 2px var(--signal-bright);
+        flex: none;
+      }
+      .health {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-family: var(--mono);
+        font-size: 12px;
+        color: #aebccb;
+        border: 1px solid rgba(174, 188, 203, 0.35);
+        border-radius: 999px;
+        padding: 5px 12px;
+      }
+      .health .beacon {
+        width: 7px; height: 7px; border-radius: 50%;
+        background: #6b7d8e;
+        flex: none;
+      }
+      .health.is-live .beacon { background: #4ade80; }
+      .health.is-down .beacon { background: var(--signal-bright); }
+
+      .hero h1 {
+        margin: 0 0 18px;
+        font-family: var(--display);
+        font-variation-settings: "wdth" 115, "wght" 850;
+        text-transform: uppercase;
+        font-size: clamp(2.4rem, 6.2vw, 4.6rem);
+        line-height: 0.98;
+        letter-spacing: 0.01em;
+        max-width: 14ch;
+      }
+      .hero h1 .route-out {
+        display: inline-block;
+        color: var(--signal-bright);
+      }
+      .hero .sub {
+        max-width: 56ch;
+        margin: 0;
+        color: #c3cdd7;
+        font-size: 1.06rem;
+      }
+      .hero .sub strong { color: #f2f5f7; font-weight: 600; }
+
+      /* ---------- Shell ---------- */
+      .shell {
+        max-width: 1160px;
+        margin: 0 auto;
+        padding: 0 24px 72px;
+      }
+
+      /* ---------- Composer ---------- */
+      .composer {
+        position: relative;
+        margin-top: -84px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 26px 28px 22px;
+      }
+      .composer-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
+      }
+      .composer-head h2 {
+        margin: 0;
+        font-family: var(--display);
+        font-variation-settings: "wdth" 110, "wght" 750;
+        font-size: 1.25rem;
+        letter-spacing: 0.02em;
+      }
+      .samples {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .sample-chip {
+        font: 500 13px/1 var(--sans);
+        color: var(--ink-soft);
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 8px 14px;
+        cursor: pointer;
+        transition: border-color 120ms ease, color 120ms ease, background 120ms ease;
+      }
+      .sample-chip:hover { border-color: var(--signal); color: var(--signal); background: var(--signal-wash); }
+
+      .field { margin-top: 14px; }
+      .field label {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 12px;
+        font-weight: 600;
+        font-size: 0.92rem;
+        margin-bottom: 6px;
+      }
+      .field .hint { font-weight: 400; font-size: 0.8rem; color: var(--ink-faint); }
+      textarea, input[type="text"] {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: #fdfefe;
+        color: var(--ink);
+        font: inherit;
+        padding: 11px 13px;
+        resize: vertical;
+        transition: border-color 120ms ease;
+      }
+      textarea:hover, input[type="text"]:hover { border-color: #b9c4cd; }
+      textarea:focus, input[type="text"]:focus { border-color: var(--signal); outline: none; box-shadow: 0 0 0 3px var(--signal-wash); }
+      #goal { font-size: 1.05rem; min-height: 92px; }
+      .field.invalid textarea { border-color: var(--risk-high); box-shadow: 0 0 0 3px var(--risk-high-wash); }
+      .field-error {
+        display: none;
+        color: var(--risk-high);
+        font-size: 0.82rem;
+        margin-top: 5px;
+      }
+      .field.invalid .field-error { display: block; }
+
+      .composer-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0 18px;
+      }
+
+      .tone-group { border: 0; padding: 0; margin: 14px 0 0; }
+      .tone-group legend {
+        font-weight: 600; font-size: 0.92rem; padding: 0; margin-bottom: 6px;
+      }
+      .segmented {
+        display: inline-flex;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        overflow: hidden;
+        background: var(--paper);
+      }
+      .segmented label {
+        position: relative;
+        cursor: pointer;
+      }
+      .segmented input {
+        position: absolute;
+        opacity: 0;
+        inset: 0;
+        cursor: pointer;
+      }
+      .segmented span {
+        display: inline-block;
+        padding: 8px 16px;
+        font-size: 0.88rem;
+        font-weight: 500;
+        color: var(--ink-soft);
+        border-right: 1px solid var(--line);
+        transition: background 120ms ease, color 120ms ease;
+      }
+      .segmented label:last-child span { border-right: 0; }
+      .segmented input:checked + span { background: var(--ink); color: #fff; }
+      .segmented input:focus-visible + span { outline: 2px solid var(--signal); outline-offset: -2px; }
+
+      .actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-top: 20px;
+        padding-top: 18px;
+        border-top: 1px solid var(--line-soft);
+      }
+      .btn {
+        appearance: none;
+        border: 1px solid transparent;
+        border-radius: 10px;
+        font: 600 0.95rem/1 var(--sans);
+        padding: 13px 22px;
+        cursor: pointer;
+        transition: transform 100ms ease, box-shadow 120ms ease, background 120ms ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .btn:active { transform: translateY(1px); }
+      .btn[disabled] { opacity: 0.55; cursor: wait; transform: none; }
+      .btn-primary {
+        background: var(--signal);
+        color: #fff;
+        box-shadow: 0 6px 16px -8px rgba(194, 65, 12, 0.7);
+      }
+      .btn-primary:hover:not([disabled]) { background: #a83809; }
+      .btn-ghost {
+        background: var(--panel);
+        color: var(--ink);
+        border-color: var(--line);
+      }
+      .btn-ghost:hover:not([disabled]) { border-color: var(--ink-soft); }
+      .btn-mini {
+        font-size: 0.8rem;
+        padding: 7px 12px;
+        border-radius: 8px;
+      }
+      .kbd-hint {
+        margin-left: auto;
+        font-family: var(--mono);
+        font-size: 11.5px;
+        color: var(--ink-faint);
+      }
+      .kbd-hint kbd {
+        font: inherit;
+        border: 1px solid var(--line);
+        border-bottom-width: 2px;
+        border-radius: 5px;
+        padding: 2px 6px;
+        background: var(--paper);
+      }
+
+      #status {
+        margin: 12px 0 0;
+        font-size: 0.88rem;
+        color: var(--ink-faint);
+        min-height: 1.3em;
+      }
+      #status.is-error { color: var(--risk-high); font-weight: 500; }
+
+      /* ---------- Workspace ---------- */
+      .workspace {
+        display: grid;
+        grid-template-columns: minmax(0, 1.55fr) minmax(280px, 1fr);
+        gap: 22px;
+        margin-top: 26px;
+        align-items: start;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+      }
+      .panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        padding: 16px 22px;
+        border-bottom: 1px solid var(--line-soft);
+      }
+      .panel-head h3 {
+        margin: 0;
+        font-family: var(--display);
+        font-variation-settings: "wdth" 110, "wght" 750;
+        font-size: 1.02rem;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+      }
+      .panel-body { padding: 20px 22px 22px; }
+
+      .meta-line {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--ink-faint);
+      }
+      .meta-line .chip {
+        font-family: var(--mono);
+        font-size: 11px;
+        border-radius: 999px;
+        padding: 3px 10px;
+        background: var(--paper);
+        border: 1px solid var(--line);
+        color: var(--ink-soft);
+      }
+      .chip.status-success { background: var(--risk-low-wash); border-color: transparent; color: var(--risk-low); }
+
+      .budget {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .budget-track {
+        width: 90px; height: 5px;
+        border-radius: 999px;
+        background: var(--line-soft);
+        overflow: hidden;
+      }
+      .budget-fill {
+        height: 100%;
+        border-radius: 999px;
+        background: var(--signal-bright);
+        transition: width 300ms ease;
+      }
+
+      /* ---------- Confidence + summary ---------- */
+      .summary-block { margin: 4px 0 22px; }
+      .confidence {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font: 500 12px/1 var(--mono);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        border-radius: 999px;
+        padding: 5px 12px;
+        margin-bottom: 10px;
+      }
+      .confidence .bars { display: inline-flex; gap: 2.5px; align-items: flex-end; }
+      .confidence .bars i { width: 3.5px; border-radius: 1px; background: currentColor; opacity: 0.35; }
+      .confidence .bars i:nth-child(1) { height: 5px; }
+      .confidence .bars i:nth-child(2) { height: 8px; }
+      .confidence .bars i:nth-child(3) { height: 11px; }
+      .confidence.c-low i:nth-child(1) { opacity: 1; }
+      .confidence.c-medium i:nth-child(-n+2) { opacity: 1; }
+      .confidence.c-high i { opacity: 1; }
+      .confidence.c-low { background: var(--risk-high-wash); color: var(--risk-high); }
+      .confidence.c-medium { background: var(--risk-med-wash); color: var(--risk-med); }
+      .confidence.c-high { background: var(--risk-low-wash); color: var(--risk-low); }
+      .summary-block p {
+        margin: 0;
+        font-size: 1.12rem;
+        font-weight: 600;
+        line-height: 1.45;
+        max-width: 62ch;
+      }
+
+      /* ---------- Route rail (signature) ---------- */
+      .route { list-style: none; margin: 0; padding: 0; position: relative; }
+      .route::before {
+        content: "";
+        position: absolute;
+        left: 15px;
+        top: 18px;
+        bottom: 18px;
+        width: 2px;
+        background: repeating-linear-gradient(
+          to bottom,
+          var(--signal-bright) 0 6px,
+          transparent 6px 11px
+        );
+      }
+      .route li {
+        position: relative;
+        padding: 0 0 18px 48px;
+      }
+      .route li:last-child { padding-bottom: 2px; }
+      .waypoint {
+        position: absolute;
+        left: 0;
+        top: 1px;
+        width: 32px; height: 32px;
+        border-radius: 50%;
+        background: var(--panel);
+        border: 2px solid var(--signal-bright);
+        color: var(--ink);
+        font: 600 13px/1 var(--mono);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .route li:last-child .waypoint { background: var(--signal-bright); color: #fff; }
+      .step-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .step-head strong { font-size: 0.99rem; }
+      .risk {
+        flex: none;
+        font: 500 11px/1 var(--mono);
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        border-radius: 999px;
+        padding: 4px 10px;
+      }
+      .risk-low { background: var(--risk-low-wash); color: var(--risk-low); }
+      .risk-medium { background: var(--risk-med-wash); color: var(--risk-med); }
+      .risk-high { background: var(--risk-high-wash); color: var(--risk-high); }
+      .step-why {
+        margin: 4px 0 0;
+        color: var(--ink-soft);
+        font-size: 0.9rem;
+        max-width: 60ch;
+      }
+
+      /* ---------- Aux sections ---------- */
+      .aux-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-top: 26px;
+        padding-top: 20px;
+        border-top: 1px solid var(--line-soft);
+      }
+      .aux h4, .next-actions h4 {
+        margin: 0 0 8px;
+        font: 600 12px/1 var(--mono);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--ink-faint);
+      }
+      .aux ul { margin: 0; padding-left: 18px; }
+      .aux li { margin-bottom: 6px; font-size: 0.9rem; color: var(--ink-soft); }
+      .aux li::marker { color: var(--signal-bright); }
+
+      .next-actions {
+        margin-top: 26px;
+        padding: 16px 18px;
+        background: var(--signal-wash);
+        border: 1px solid #f0cdbb;
+        border-radius: 12px;
+      }
+      .next-actions ol { margin: 0; padding-left: 20px; }
+      .next-actions li { margin-bottom: 6px; font-weight: 500; font-size: 0.93rem; }
+      .next-actions li::marker { font-family: var(--mono); font-weight: 600; color: var(--signal); }
+
+      .output-tools { display: flex; gap: 8px; flex-wrap: wrap; }
+      .raw-json {
+        display: none;
+        margin: 22px 0 0;
+        background: var(--ink);
+        color: #c9d6e2;
+        border-radius: 10px;
+        padding: 16px;
+        font-family: var(--mono);
+        font-size: 12px;
+        line-height: 1.6;
+        overflow-x: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      .raw-json.is-open { display: block; }
+
+      /* ---------- Compare ---------- */
+      .compare-cols {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+      }
+      .variant {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 16px;
+        min-width: 0;
+      }
+      .variant.is-winner { border-color: var(--signal-bright); box-shadow: 0 0 0 1px var(--signal-bright); }
+      .variant-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 4px;
+      }
+      .variant-head h4 {
+        margin: 0;
+        font-family: var(--display);
+        font-variation-settings: "wdth" 108, "wght" 700;
+        font-size: 0.95rem;
+      }
+      .winner-tag {
+        font: 600 10px/1 var(--mono);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--signal);
+        background: var(--signal-wash);
+        border-radius: 999px;
+        padding: 4px 9px;
+      }
+      .variant .meta-line { margin-bottom: 12px; }
+      .variant .route::before { left: 11px; }
+      .variant .route li { padding-left: 38px; padding-bottom: 12px; }
+      .variant .waypoint { width: 24px; height: 24px; font-size: 11px; }
+      .variant .step-why { display: none; }
+      .variant-error {
+        color: var(--risk-high);
+        font-size: 0.88rem;
+        background: var(--risk-high-wash);
+        border-radius: 8px;
+        padding: 10px 12px;
+      }
+
+      /* ---------- States ---------- */
+      .empty-state {
+        text-align: center;
+        padding: 46px 24px;
+        color: var(--ink-faint);
+      }
+      .empty-state .glyph {
+        width: 52px; height: 52px;
+        margin: 0 auto 14px;
+        border-radius: 50%;
+        border: 2px dashed var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--signal-bright);
+        font-size: 20px;
+      }
+      .empty-state p { margin: 0; max-width: 40ch; margin-inline: auto; }
+      .empty-state .cta {
+        background: none;
+        border: none;
+        padding: 0;
+        color: var(--signal);
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+
+      .skeleton-route { list-style: none; margin: 0; padding: 0; }
+      .skeleton-route li {
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+        margin-bottom: 20px;
+      }
+      .sk {
+        background: linear-gradient(90deg, var(--line-soft) 25%, #f4f6f8 45%, var(--line-soft) 65%);
+        background-size: 200% 100%;
+        animation: shimmer 1.4s infinite linear;
+        border-radius: 8px;
+      }
+      .sk-dot { width: 32px; height: 32px; border-radius: 50%; flex: none; }
+      .sk-lines { flex: 1; }
+      .sk-line { height: 12px; margin-bottom: 8px; }
+      .sk-line.w60 { width: 60%; }
+      .sk-line.w85 { width: 85%; }
+      @keyframes shimmer { to { background-position: -200% 0; } }
+
+      .error-state {
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+        background: var(--risk-high-wash);
+        border: 1px solid #eccfcb;
+        border-radius: 12px;
+        padding: 18px;
+      }
+      .error-state.is-budget { background: var(--risk-med-wash); border-color: #e8d9b6; }
+      .error-state .mark {
+        flex: none;
+        width: 34px; height: 34px;
+        border-radius: 50%;
+        background: var(--panel);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 16px;
+      }
+      .error-state h4 { margin: 0 0 4px; font-size: 0.98rem; }
+      .error-state p { margin: 0 0 10px; font-size: 0.9rem; color: var(--ink-soft); max-width: 58ch; }
+
+      /* ---------- History ---------- */
+      .history-panel { position: sticky; top: 20px; }
+      .history-list { list-style: none; margin: 0; padding: 0; }
+      .history-list li {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--line-soft);
+      }
+      .history-list li:first-child { padding-top: 2px; }
+      .history-list li:last-child { border-bottom: 0; padding-bottom: 2px; }
+      .run-dot {
+        flex: none;
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        margin-top: 7px;
+      }
+      .run-dot.success { background: var(--risk-low); }
+      .run-dot.failed { background: var(--risk-high); }
+      .run-main { flex: 1; min-width: 0; }
+      .run-goal {
+        font-size: 0.88rem;
+        font-weight: 500;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+      }
+      .run-meta {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--ink-faint);
+        margin-top: 3px;
+      }
+      .reuse-btn {
+        flex: none;
+        background: none;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        color: var(--ink-soft);
+        font: 500 11.5px/1 var(--sans);
+        padding: 6px 10px;
+        cursor: pointer;
+        transition: border-color 120ms ease, color 120ms ease;
+      }
+      .reuse-btn:hover { border-color: var(--signal); color: var(--signal); }
+      .history-empty, .history-error {
+        padding: 22px 0 8px;
+        color: var(--ink-faint);
+        font-size: 0.88rem;
+      }
+      .history-error { color: var(--risk-high); }
+
+      /* ---------- Footer ---------- */
+      .foot {
+        margin-top: 40px;
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        font-family: var(--mono);
+        font-size: 11.5px;
+        color: var(--ink-faint);
+      }
+      .foot a { color: var(--ink-soft); }
+
+      .visually-hidden {
+        position: absolute; width: 1px; height: 1px;
+        margin: -1px; padding: 0; overflow: hidden;
+        clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+      }
+
+      /* ---------- Responsive ---------- */
+      @media (max-width: 960px) {
+        .workspace { grid-template-columns: 1fr; }
+        .history-panel { position: static; }
+        .compare-cols { grid-template-columns: 1fr; }
+        .hero { padding: 40px 18px 116px; }
+        .shell { padding: 0 18px 56px; }
+      }
+      @media (max-width: 640px) {
+        .composer { padding: 20px 18px 18px; margin-top: -76px; }
+        .composer-grid, .aux-grid { grid-template-columns: 1fr; }
+        .actions .btn { flex: 1 1 auto; justify-content: center; }
+        .kbd-hint { display: none; }
+        .panel-head, .panel-body { padding-left: 16px; padding-right: 16px; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html { scroll-behavior: auto; }
+        .sk { animation: none; }
+        .btn, .budget-fill { transition: none; }
+      }
     </style>
   </head>
   <body>
-    <div class="container">
-      <h1>Kimi K3 Planner</h1>
-      <div class="card">
-        <p class="muted">Playground that turns a goal into a structured execution plan using Fireworks models.</p>
+    <header class="hero">
+      <svg class="hero-contours" aria-hidden="true" preserveAspectRatio="xMidYMid slice" viewBox="0 0 1200 460">
+        <g fill="none" stroke="#2c3f50" stroke-width="1.1">
+          <path d="M-60 420 C 180 340, 260 400, 430 330 S 760 270, 920 320 S 1160 300, 1280 240" />
+          <path d="M-60 370 C 160 300, 300 350, 470 285 S 780 225, 940 275 S 1170 250, 1280 195" />
+          <path d="M-60 320 C 150 265, 330 305, 505 245 S 800 185, 955 235 S 1180 205, 1280 155" />
+          <path d="M-40 270 C 170 225, 360 260, 540 205 S 820 150, 970 195 S 1190 165, 1280 118" />
+          <path d="M0 220 C 200 185, 400 215, 575 168 S 840 118, 985 158 S 1200 128, 1280 85" />
+          <path d="M60 172 C 250 148, 440 172, 610 132 S 855 88, 1000 122 S 1205 95, 1280 55" />
+        </g>
+        <g fill="none" stroke="#e4570f" stroke-width="2" stroke-dasharray="1 9" stroke-linecap="round">
+          <path d="M120 400 C 330 330, 480 300, 640 235 S 900 140, 1120 96" />
+        </g>
+        <circle cx="120" cy="400" r="5" fill="#e4570f" />
+        <circle cx="1120" cy="96" r="5" fill="#e4570f" />
+        <circle cx="1120" cy="96" r="10" fill="none" stroke="#e4570f" stroke-width="1.5" />
+      </svg>
+      <div class="hero-inner">
+        <div class="hero-top">
+          <div class="wordmark"><span class="dot" aria-hidden="true"></span>KIMI K3 · PLANNING PLAYGROUND</div>
+          <div class="health" id="health" role="status"><span class="beacon" aria-hidden="true"></span><span id="healthText">checking api…</span></div>
+        </div>
+        <h1>Goal in. <span class="route-out">Route out.</span></h1>
+        <p class="sub">One sentence becomes an ordered, risk-rated execution plan — <strong>steps, assumptions, risks, and your next three moves</strong>. Runs server-side on Fireworks and lands in your run history.</p>
+      </div>
+    </header>
 
-        <div class="row" style="margin-bottom: 12px;">
-          <button id="exampleLaunch" class="small" type="button">Load Example: launch an MVP</button>
-          <button id="exampleGrowth" class="small secondary" type="button">Load Example: grow monthly revenue</button>
-          <button id="exampleClean" class="small secondary" type="button">Load Example: reduce onboarding friction</button>
+    <main class="shell">
+      <!-- Composer -->
+      <section class="composer" aria-labelledby="composerTitle">
+        <div class="composer-head">
+          <h2 id="composerTitle">Chart a plan</h2>
+          <div class="samples" role="group" aria-label="Sample prompts">
+            <button class="sample-chip" type="button" data-example="launch">Launch an MVP in 7 days</button>
+            <button class="sample-chip" type="button" data-example="growth">Grow newsletter revenue</button>
+            <button class="sample-chip" type="button" data-example="clean">Fix onboarding friction</button>
+          </div>
         </div>
 
-        <label for="goal">Goal</label>
-        <textarea id="goal" rows="4" placeholder="e.g., Plan a personal AI side project MVP"></textarea>
+        <div class="field" id="goalField">
+          <label for="goal">Goal <span class="hint">10–2000 characters</span></label>
+          <textarea id="goal" rows="3" placeholder="What do you want to pull off? e.g. Launch a paid AI side project to 100 users in 30 days"></textarea>
+          <p class="field-error" id="goalError">Give the goal at least 10 characters so the model has something to plan against.</p>
+        </div>
 
-        <div class="row">
-          <div>
-            <label for="constraints">Constraints</label>
-            <input id="constraints" placeholder="Budget, time, stack constraints">
+        <div class="composer-grid">
+          <div class="field">
+            <label for="constraints">Constraints <span class="hint">optional</span></label>
+            <input type="text" id="constraints" placeholder="Budget, timeline, stack — e.g. $100, nights only, no paid ads" />
           </div>
-          <div>
-            <label for="tone">Tone</label>
-            <select id="tone">
-              <option value="clear">Clear</option>
-              <option value="concise">Concise</option>
-              <option value="executive">Executive</option>
-            </select>
+          <div class="field">
+            <label for="blocker">Stretch challenge <span class="hint">optional — folded into constraints</span></label>
+            <input type="text" id="blocker" placeholder="e.g. only 90 mins/day of focus time" />
           </div>
         </div>
 
-        <div class="row">
-          <div>
-            <label for="context">Context</label>
-            <textarea id="context" rows="3" placeholder="Existing codebase, team size, risks to consider"></textarea>
-          </div>
-          <div>
-            <label for="blocker">Challenge / Blocker (for wow mode)</label>
-            <textarea id="blocker" rows="3" placeholder="e.g., only 90 mins/day and max $100 spend"></textarea>
-          </div>
+        <div class="field">
+          <label for="context">Context <span class="hint">optional</span></label>
+          <textarea id="context" rows="2" placeholder="Who's doing this, what exists already, known risks"></textarea>
         </div>
 
-        <div class="row">
-          <button id="run" type="button">Generate plan</button>
-          <button id="runCompare" class="secondary" type="button">Generate Compare View</button>
-          <button id="runAction" class="secondary" type="button">Give me first 3 actions</button>
+        <fieldset class="tone-group">
+          <legend>Tone</legend>
+          <div class="segmented" role="radiogroup" aria-label="Tone">
+            <label><input type="radio" name="tone" value="clear" checked /><span>Clear</span></label>
+            <label><input type="radio" name="tone" value="concise" /><span>Concise</span></label>
+            <label><input type="radio" name="tone" value="executive" /><span>Executive</span></label>
+          </div>
+        </fieldset>
+
+        <div class="actions">
+          <button id="run" class="btn btn-primary" type="button">Generate plan</button>
+          <button id="runCompare" class="btn btn-ghost" type="button">Compare 3 variants</button>
+          <button id="runAction" class="btn btn-ghost" type="button">First 3 actions</button>
+          <span class="kbd-hint"><kbd>⌘</kbd> + <kbd>Enter</kbd> to generate</span>
+        </div>
+        <p id="status" role="status" aria-live="polite"></p>
+      </section>
+
+      <!-- Workspace -->
+      <div class="workspace">
+        <div class="output-col">
+          <!-- Single result -->
+          <section class="panel" id="result" aria-labelledby="resultTitle">
+            <div class="panel-head">
+              <h3 id="resultTitle">Plan</h3>
+              <div class="output-tools" id="resultTools" hidden>
+                <button class="btn btn-ghost btn-mini" id="copyPlan" type="button">Copy as Markdown</button>
+                <button class="btn btn-ghost btn-mini" id="toggleRaw" type="button" aria-expanded="false">View raw JSON</button>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="meta-line" id="runMeta" hidden></div>
+              <div id="outputZone">
+                <div class="empty-state" id="emptyState">
+                  <div class="glyph" aria-hidden="true">◎</div>
+                  <p>No plan yet. Describe a goal above — or <button class="cta" type="button" id="emptySample">load a sample</button> — and the route lands here.</p>
+                </div>
+              </div>
+              <pre class="raw-json" id="rawJson" tabindex="0" aria-label="Raw JSON response"></pre>
+            </div>
+          </section>
+
         </div>
 
-        <p class="muted">This calls your Fireworks key server-side and records each run to SQLite.</p>
-        <p id="status" class="muted"></p>
+        <!-- History -->
+        <aside class="panel history-panel" aria-labelledby="historyTitle">
+          <div class="panel-head">
+            <h3 id="historyTitle">Run history</h3>
+            <button class="btn btn-ghost btn-mini" id="reloadRuns" type="button">Refresh</button>
+          </div>
+          <div class="panel-body" id="runs" aria-live="polite">
+            <p class="history-empty">Loading history…</p>
+          </div>
+        </aside>
       </div>
 
-      <div class="grid">
-        <div>
-          <div class="card" id="result" hidden>
-            <h3>Plan</h3>
-            <div class="meta" id="runMeta"></div>
-            <div id="singlePlan"></div>
-          </div>
-
-          <div class="card" id="compareResult" hidden>
-            <h3>Compare View</h3>
-            <div class="columns" id="comparePlans"></div>
-          </div>
+      <!-- Compare result — full width so each strategy gets room -->
+      <section class="panel" id="compareResult" hidden aria-labelledby="compareTitle" style="margin-top: 22px;">
+        <div class="panel-head">
+          <h3 id="compareTitle">Compare · 3 variants</h3>
+          <span class="chip" style="font-family: var(--mono); font-size: 11px;">same goal, three strategies</span>
         </div>
-
-        <div>
-          <div class="card">
-            <h3>Run Replay</h3>
-            <button id="reloadRuns" class="small secondary" type="button">Refresh run history</button>
-            <div id="runs" class="muted">Loading history...</div>
-          </div>
+        <div class="panel-body">
+          <div class="compare-cols" id="comparePlans"></div>
         </div>
-      </div>
-    </div>
+      </section>
+
+      <footer class="foot">
+        <span>KIMI K3 · plans are model output — sanity-check before you execute</span>
+        <span><a href="/openapi">API docs</a> · SQLite run log · Fireworks server-side</span>
+      </footer>
+    </main>
 
     <script>
-      const status = document.getElementById("status");
-      const result = document.getElementById("result");
+      const statusEl = document.getElementById("status");
       const runMeta = document.getElementById("runMeta");
-      const singlePlan = document.getElementById("singlePlan");
+      const outputZone = document.getElementById("outputZone");
+      const resultTools = document.getElementById("resultTools");
+      const rawJson = document.getElementById("rawJson");
       const compareResult = document.getElementById("compareResult");
       const comparePlans = document.getElementById("comparePlans");
       const runsEl = document.getElementById("runs");
+      const goalField = document.getElementById("goalField");
+      const healthEl = document.getElementById("health");
+      const healthText = document.getElementById("healthText");
+
+      let lastResponse = null;
+      let busy = false;
 
       const examples = {
         launch: {
@@ -138,40 +924,64 @@
         }
       };
 
+      /* ---------- wiring ---------- */
       document.getElementById("run").addEventListener("click", () => runSingle());
       document.getElementById("runCompare").addEventListener("click", () => runCompare());
       document.getElementById("runAction").addEventListener("click", () => runActionFirst());
       document.getElementById("reloadRuns").addEventListener("click", loadRuns);
-      document.getElementById("exampleLaunch").addEventListener("click", () => fillExample(examples.launch));
-      document.getElementById("exampleGrowth").addEventListener("click", () => fillExample(examples.growth));
-      document.getElementById("exampleClean").addEventListener("click", () => fillExample(examples.clean));
+      document.getElementById("copyPlan").addEventListener("click", copyPlanMarkdown);
+      document.getElementById("toggleRaw").addEventListener("click", toggleRaw);
+      document.getElementById("emptySample").addEventListener("click", () => fillExample(examples.launch, true));
+      document.querySelectorAll(".sample-chip").forEach((chip) => {
+        chip.addEventListener("click", () => fillExample(examples[chip.dataset.example], true));
+      });
+      document.getElementById("goal").addEventListener("input", () => {
+        goalField.classList.remove("invalid");
+      });
+      document.addEventListener("keydown", (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+          e.preventDefault();
+          runSingle();
+        }
+      });
 
-      function fillExample(data) {
+      function fillExample(data, announce) {
         document.getElementById("goal").value = data.goal;
         document.getElementById("constraints").value = data.constraints;
         document.getElementById("context").value = data.context;
-        document.getElementById("tone").value = data.tone;
+        const tone = document.querySelector(`input[name="tone"][value="${data.tone}"]`);
+        if (tone) tone.checked = true;
+        goalField.classList.remove("invalid");
+        if (announce) setStatus("Sample loaded. Generate plan when ready.");
+        document.getElementById("goal").focus();
       }
 
+      /* ---------- payload (identical to previous behavior) ---------- */
       function buildPayload(override) {
         const goal = document.getElementById("goal").value.trim();
         const constraints = document.getElementById("constraints").value.trim();
         const context = document.getElementById("context").value.trim();
-        const tone = document.getElementById("tone").value;
+        const tone = (document.querySelector('input[name="tone"]:checked') || {}).value || "clear";
         const blocker = document.getElementById("blocker").value.trim();
 
-        const payload = {
-          goal,
-          constraints: constraints || null,
-          context: context || null,
-          tone
-        };
-
+        const payload = { goal, constraints: constraints || null, context: context || null, tone };
         if (blocker) {
-          payload.constraints = payload.constraints ? `${payload.constraints}. Extra challenge: ${blocker}` : `Challenge: ${blocker}`;
+          payload.constraints = payload.constraints
+            ? `${payload.constraints}. Extra challenge: ${blocker}`
+            : `Challenge: ${blocker}`;
         }
-
         return Object.assign(payload, override || {});
+      }
+
+      function validateGoal() {
+        const goal = document.getElementById("goal").value.trim();
+        if (goal.length < 10) {
+          goalField.classList.add("invalid");
+          document.getElementById("goal").focus();
+          setStatus("Add a little more detail to the goal first.", true);
+          return false;
+        }
+        return true;
       }
 
       function computeScore(data) {
@@ -179,163 +989,334 @@
         const hasAssumptions = (data.assumptions || []).length > 0;
         const hasRisks = (data.risks || []).length > 0;
         const hasActions = (data.next_actions || []).length > 0;
-        const clarity = Math.min(100, 40 + steps * 12 + (hasAssumptions ? 10 : 0) + (hasRisks ? 10 : 0) + (hasActions ? 10 : 0));
-        return clarity;
+        return Math.min(100, 40 + steps * 12 + (hasAssumptions ? 10 : 0) + (hasRisks ? 10 : 0) + (hasActions ? 10 : 0));
       }
 
+      /* ---------- runs ---------- */
       async function runSingle(options) {
+        if (busy || !validateGoal()) return;
         const payload = buildPayload(options);
-        setLoadingState("Generating...");
-        hidePanels();
+        startBusy("Charting the route… usually 5–15 seconds.");
+        compareResult.hidden = true;
+        showSkeleton();
         try {
           const data = await postPlan(payload);
-          const budget = data.daily_spend_usd != null && data.daily_budget_usd != null
-            ? ` • spend today ${escapeHtml(Number(data.daily_spend_usd).toFixed(2))}/${escapeHtml(Number(data.daily_budget_usd).toFixed(2))}`
-            : "";
-          runMeta.innerHTML = `<span class="chip">${escapeHtml(data.status || "success")}</span>` +
-            `Run #${escapeHtml(String(data.id))} • latency ${escapeHtml(String(data.latency_ms))}ms • model ${escapeHtml(data.model)} •` +
-            ` quality score ${escapeHtml(String(computeScore(data.data || {})))} /100${budget}`;
-          singlePlan.innerHTML = renderPlan(data.data || {});
-          result.hidden = false;
-          status.textContent = "Plan ready.";
-          status.className = "muted";
+          lastResponse = data;
+          renderMeta(data);
+          outputZone.innerHTML = renderPlan(data.data || {});
+          resultTools.hidden = false;
+          rawJson.textContent = formatRaw(data.raw_output);
+          setStatus("Plan ready.");
           await loadRuns();
         } catch (e) {
-          status.textContent = `Error: ${e.message}`;
-          status.className = "error";
+          renderErrorState(e);
+          setStatus(errorHeadline(e), true);
+        } finally {
+          endBusy();
         }
       }
 
       async function runCompare() {
+        if (busy || !validateGoal()) return;
         const base = buildPayload();
-        setLoadingState("Generating compare view...");
-        comparePlans.innerHTML = "";
+        startBusy("Generating three strategies in parallel…");
+        comparePlans.innerHTML = skeletonVariants();
         compareResult.hidden = false;
+        compareResult.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        const variants = [
+          { label: "Current constraints", payload: { ...base } },
+          { label: "Speed-first", payload: { ...base, tone: "concise", constraints: `${base.constraints || "No constraints"}; prioritize speed` } },
+          { label: "Risk-minimized", payload: { ...base, tone: "executive", constraints: `${base.constraints || "No constraints"}; prioritize low risk` } }
+        ];
         try {
-          const variants = [
-            { label: "Current constraints", tone: base.tone, c: base.constraints },
-            { label: "Speed-first", tone: "concise", constraints: `${base.constraints || "No constraints"}; prioritize speed` },
-            { label: "Risk-minimized", tone: "executive", constraints: `${base.constraints || "No constraints"}; prioritize low risk` }
-          ];
-
-          const results = await Promise.all(
-            variants.map((v) => postPlan({ ...base, tone: v.tone, constraints: v.constraints }))
-          );
-
-          results.forEach((body, idx) => {
-            const score = computeScore(body.data || {});
-            const block = document.createElement("div");
-            block.className = "plan-block";
-            block.innerHTML = `<h4>${escapeHtml(variants[idx].label)}</h4>` +
-              `<div class="meta"><span class="chip">${escapeHtml(body.model || "")}</span>` +
-              `Score ${escapeHtml(String(score))}/100 • ${escapeHtml(String(body.latency_ms || ""))}ms</div>` +
-              renderPlan(body.data || {});
-            comparePlans.appendChild(block);
-          });
-
-          status.textContent = "Compare generation complete.";
-          status.className = "muted";
+          const settled = await Promise.allSettled(variants.map((v) => postPlan(v.payload)));
+          const scores = settled.map((s) => (s.status === "fulfilled" ? computeScore(s.value.data || {}) : -1));
+          const best = Math.max(...scores);
+          const winnerIdx = best >= 0 ? scores.indexOf(best) : -1;
+          comparePlans.innerHTML = settled.map((s, idx) => {
+            if (s.status === "rejected") {
+              return `<div class="variant"><div class="variant-head"><h4>${escapeHtml(variants[idx].label)}</h4></div>` +
+                `<div class="variant-error">${escapeHtml(errorHeadline(s.reason))}</div></div>`;
+            }
+            const body = s.value;
+            const score = scores[idx];
+            const winner = idx === winnerIdx;
+            return `<div class="variant${winner ? " is-winner" : ""}">` +
+              `<div class="variant-head"><h4>${escapeHtml(variants[idx].label)}</h4>${winner ? '<span class="winner-tag">Highest score</span>' : ""}</div>` +
+              `<div class="meta-line"><span class="chip">score ${score}/100</span><span>${escapeHtml(String(body.latency_ms || ""))}ms</span></div>` +
+              renderPlan(body.data || {}, { compact: true }) +
+              `</div>`;
+          }).join("");
+          const okCount = settled.filter((s) => s.status === "fulfilled").length;
+          setStatus(okCount === 3 ? "Three strategies ready — highest-scoring variant is outlined." : `${okCount}/3 variants completed.`, okCount === 0);
           await loadRuns();
-          result.hidden = true;
-        } catch (e) {
-          status.textContent = `Error: ${e.message}`;
-          status.className = "error";
-          compareResult.hidden = true;
+        } finally {
+          endBusy();
         }
       }
 
       async function runActionFirst() {
-        const payload = buildPayload({
-          context: (document.getElementById("context").value.trim() || "") +
-            (document.getElementById("context").value.trim() ? " \n" : "") +
+        if (busy) return;
+        const context = document.getElementById("context").value.trim();
+        await runSingle({
+          context: context + (context ? " \n" : "") +
             "Return only first 3 high-impact actions in order for the next 24 hours, then the rest of the plan."
         });
-        await runSingle(payload);
       }
 
       async function postPlan(payload) {
         const res = await fetch("/api/plan", {
           method: "POST",
-          headers: {"content-type": "application/json"},
+          headers: { "content-type": "application/json" },
           body: JSON.stringify(payload)
         });
-        const body = await res.json();
+        const body = await res.json().catch(() => null);
         if (!res.ok) {
-          if (res.status === 429) {
-            throw new Error(body?.detail || "Daily testing cap reached. Try again tomorrow.");
-          }
-          throw new Error(body?.detail || "Request failed");
+          const err = new Error(extractDetail(body) || "Request failed");
+          err.status = res.status;
+          throw err;
         }
         return body;
       }
 
-      function renderPlan(data) {
-        const summary = document.createElement("div");
-        summary.innerHTML = `<p><span class=\"pill\">${escapeHtml(data.confidence || "low")}</span> <strong>${escapeHtml(data.summary || "")}</strong></p>`;
-
-        const body = document.createElement("div");
-        body.innerHTML = `
-          <h4>Assumptions</h4><ul>${(data.assumptions || []).map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul>
-          <h4>Plan</h4><ul>${(data.plan || []).map((p) => `<li><strong>Step ${escapeHtml(String(p.step))}:</strong> ${escapeHtml(p.action)} — ${escapeHtml(p.why)} (Risk: ${escapeHtml(p.risk)})</li>`).join("")}</ul>
-          <h4>Risks</h4><ul>${(data.risks || []).map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul>
-          <h4>Next actions</h4><ul>${(data.next_actions || []).slice(0, 5).map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul>
-        `;
-
-        const wrapper = document.createElement("div");
-        wrapper.appendChild(summary);
-        wrapper.appendChild(body);
-        return wrapper.innerHTML;
+      function extractDetail(body) {
+        if (!body || body.detail == null) return "";
+        if (typeof body.detail === "string") return body.detail;
+        try { return JSON.stringify(body.detail); } catch { return String(body.detail); }
       }
 
-      async function loadRuns() {
-        runsEl.textContent = "Loading...";
+      /* ---------- rendering ---------- */
+      function renderMeta(data) {
+        runMeta.hidden = false;
+        const score = computeScore(data.data || {});
+        let budget = "";
+        if (data.daily_spend_usd != null && data.daily_budget_usd != null) {
+          const pct = Math.min(100, (Number(data.daily_spend_usd) / Number(data.daily_budget_usd)) * 100);
+          budget = `<span class="budget" title="Daily budget used">` +
+            `<span class="budget-track"><span class="budget-fill" style="width:${pct.toFixed(0)}%"></span></span>` +
+            `<span>$${escapeHtml(Number(data.daily_spend_usd).toFixed(2))} / $${escapeHtml(Number(data.daily_budget_usd).toFixed(2))} today</span></span>`;
+        }
+        runMeta.innerHTML =
+          `<span class="chip status-${escapeHtml(data.status || "success")}">${escapeHtml(data.status || "success")}</span>` +
+          `<span>run #${escapeHtml(String(data.id))}</span>` +
+          `<span>${escapeHtml(String(data.latency_ms))}ms</span>` +
+          `<span title="${escapeHtml(data.model || "")}">${escapeHtml(shortModel(data.model))}</span>` +
+          `<span>score ${score}/100</span>` + budget;
+        runMeta.style.marginBottom = "18px";
+      }
+
+      function renderPlan(data, opts) {
+        const compact = opts && opts.compact;
+        const conf = (data.confidence || "low").toLowerCase();
+        const steps = (data.plan || []).map((p, i, arr) =>
+          `<li><span class="waypoint" aria-hidden="true">${i === arr.length - 1 ? "⚑" : escapeHtml(String(p.step))}</span>` +
+          `<div class="step-head"><strong>${escapeHtml(p.action)}</strong>` +
+          `<span class="risk risk-${escapeHtml(p.risk || "low")}">${escapeHtml(p.risk || "low")}</span></div>` +
+          `<p class="step-why">${escapeHtml(p.why || "")}</p></li>`
+        ).join("");
+
+        const summary =
+          `<div class="summary-block">` +
+          `<span class="confidence c-${escapeHtml(conf)}"><span class="bars" aria-hidden="true"><i></i><i></i><i></i></span>${escapeHtml(conf)} confidence</span>` +
+          `<p>${escapeHtml(data.summary || "")}</p></div>`;
+
+        const rail = `<ol class="route" aria-label="Plan steps">${steps}</ol>`;
+
+        if (compact) return summary + rail;
+
+        const aux =
+          `<div class="aux-grid">` +
+          `<div class="aux"><h4>Assumptions</h4><ul>${(data.assumptions || []).map((x) => `<li>${escapeHtml(x)}</li>`).join("") || "<li>None stated</li>"}</ul></div>` +
+          `<div class="aux"><h4>Risks</h4><ul>${(data.risks || []).map((x) => `<li>${escapeHtml(x)}</li>`).join("") || "<li>None stated</li>"}</ul></div>` +
+          `</div>`;
+
+        const next =
+          `<div class="next-actions"><h4>Next actions</h4><ol>` +
+          (data.next_actions || []).slice(0, 5).map((x) => `<li>${escapeHtml(x)}</li>`).join("") +
+          `</ol></div>`;
+
+        return summary + rail + aux + next;
+      }
+
+      function renderErrorState(e) {
+        resultTools.hidden = true;
+        runMeta.hidden = true;
+        rawJson.classList.remove("is-open");
+        const budget = e && e.status === 429;
+        const upstream = e && e.status === 502;
+        const title = budget ? "Daily budget reached" : upstream ? "The model didn't answer" : "That didn't work";
+        const detail = escapeHtml((e && e.message) || "Request failed.");
+        const advice = budget
+          ? "The playground caps spend per UTC day. The cap resets at midnight UTC."
+          : upstream
+            ? "Fireworks didn't return a usable response. This is usually transient — try again."
+            : "Check the inputs and try again.";
+        outputZone.innerHTML =
+          `<div class="error-state${budget ? " is-budget" : ""}" role="alert">` +
+          `<span class="mark" aria-hidden="true">${budget ? "◔" : "△"}</span>` +
+          `<div><h4>${title}</h4><p>${detail}</p><p>${advice}</p>` +
+          (budget ? "" : `<button class="btn btn-ghost btn-mini" type="button" onclick="document.getElementById('run').click()">Try again</button>`) +
+          `</div></div>`;
+      }
+
+      function errorHeadline(e) {
+        if (e && e.status === 429) return "Daily budget reached — resets at midnight UTC.";
+        return `Error: ${(e && e.message) || "request failed"}`;
+      }
+
+      function showSkeleton() {
+        resultTools.hidden = true;
+        runMeta.hidden = true;
+        rawJson.classList.remove("is-open");
+        document.getElementById("toggleRaw").setAttribute("aria-expanded", "false");
+        outputZone.innerHTML =
+          `<ul class="skeleton-route" aria-hidden="true">` +
+          [65, 85, 55, 75].map((w) =>
+            `<li><span class="sk sk-dot"></span><span class="sk-lines">` +
+            `<span class="sk sk-line" style="width:${w}%"></span>` +
+            `<span class="sk sk-line" style="width:${Math.max(30, w - 25)}%"></span></span></li>`
+          ).join("") + `</ul>`;
+      }
+
+      function skeletonVariants() {
+        return Array.from({ length: 3 }, () =>
+          `<div class="variant" aria-hidden="true">` +
+          `<span class="sk sk-line w60" style="display:block;height:14px;margin-bottom:12px;"></span>` +
+          `<span class="sk sk-line w85" style="display:block;margin-bottom:8px;"></span>` +
+          `<span class="sk sk-line w60" style="display:block;margin-bottom:8px;"></span>` +
+          `<span class="sk sk-line w85" style="display:block;"></span></div>`
+        ).join("");
+      }
+
+      /* ---------- tools ---------- */
+      function toggleRaw() {
+        const open = rawJson.classList.toggle("is-open");
+        const btn = document.getElementById("toggleRaw");
+        btn.setAttribute("aria-expanded", String(open));
+        btn.textContent = open ? "Hide raw JSON" : "View raw JSON";
+      }
+
+      function formatRaw(raw) {
+        try { return JSON.stringify(JSON.parse(raw), null, 2); } catch { return raw || ""; }
+      }
+
+      async function copyPlanMarkdown() {
+        if (!lastResponse || !lastResponse.data) return;
+        const d = lastResponse.data;
+        const md = [
+          `# Plan — ${d.summary || ""}`,
+          ``,
+          `Confidence: ${d.confidence || "low"}`,
+          ``,
+          `## Steps`,
+          ...(d.plan || []).map((p) => `${p.step}. **${p.action}** — ${p.why} _(risk: ${p.risk})_`),
+          ``,
+          `## Assumptions`,
+          ...(d.assumptions || []).map((x) => `- ${x}`),
+          ``,
+          `## Risks`,
+          ...(d.risks || []).map((x) => `- ${x}`),
+          ``,
+          `## Next actions`,
+          ...(d.next_actions || []).map((x, i) => `${i + 1}. ${x}`)
+        ].join("\n");
         try {
-          const res = await fetch("/api/runs?limit=8");
-          if (!res.ok) {
-            throw new Error("Failed to load run history");
-          }
-          const list = await res.json();
-          if (!list || list.length === 0) {
-            runsEl.innerHTML = "<p class='muted'>No runs yet.</p>";
-            return;
-          }
-          runsEl.innerHTML = list.map((r) => {
-            const goal = escapeHtml(r.goal || "");
-            return `<div class=\"history-item\">\n              <div class=\"left\"><div><strong>#${escapeHtml(String(r.id))}</strong> • ${goal.slice(0, 72)}${goal.length > 72 ? "..." : ""}</div>\n              <div class=\"muted\">${escapeHtml(r.status)} • ${escapeHtml(r.model || "")}</div></div>\n              <div class=\"right\"><button class=\"small secondary\" data-goal=\"${encodeAttr(goal)}\" type=\"button\">Reuse goal</button></div>\n            </div>`;
-          }).join("");
-          runsEl.querySelectorAll("button[data-goal]").forEach((button) => {
-            button.addEventListener("click", (event) => {
-              const goal = event.currentTarget.getAttribute("data-goal") || "";
-              document.getElementById("goal").value = goal;
-              document.getElementById("status").textContent = "Goal loaded from history. Click Generate plan to rerun.";
-            });
-          });
-        } catch (e) {
-          runsEl.innerHTML = `<p class=\"error\">Could not load runs.</p>`;
+          await navigator.clipboard.writeText(md);
+          const btn = document.getElementById("copyPlan");
+          const prev = btn.textContent;
+          btn.textContent = "Copied";
+          setTimeout(() => { btn.textContent = prev; }, 1600);
+        } catch {
+          setStatus("Couldn't reach the clipboard — select the raw JSON instead.", true);
         }
       }
 
-      function setLoadingState(message) {
-        status.textContent = message;
-        status.className = "muted";
+      /* ---------- history ---------- */
+      async function loadRuns() {
+        try {
+          const res = await fetch("/api/runs?limit=8");
+          if (!res.ok) throw new Error("Failed to load run history");
+          const list = await res.json();
+          if (!list || list.length === 0) {
+            runsEl.innerHTML = `<p class="history-empty">No runs yet — the first plan you generate lands here.</p>`;
+            return;
+          }
+          runsEl.innerHTML = `<ul class="history-list">` + list.map((r) => {
+            const goal = String(r.goal || "");
+            return `<li>` +
+              `<span class="run-dot ${r.status === "success" ? "success" : "failed"}" title="${escapeHtml(r.status)}"></span>` +
+              `<span class="run-main"><span class="run-goal">${escapeHtml(goal)}</span>` +
+              `<span class="run-meta">#${escapeHtml(String(r.id))} · ${escapeHtml(r.status)}${r.latency_ms ? ` · ${escapeHtml(String(r.latency_ms))}ms` : ""} · ${escapeHtml(relTime(r.created_at))}</span></span>` +
+              `<button class="reuse-btn" type="button" data-goal="${encodeAttr(goal)}">Reuse</button>` +
+              `</li>`;
+          }).join("") + `</ul>`;
+          runsEl.querySelectorAll("button[data-goal]").forEach((button) => {
+            button.addEventListener("click", (event) => {
+              document.getElementById("goal").value = event.currentTarget.getAttribute("data-goal") || "";
+              goalField.classList.remove("invalid");
+              setStatus("Goal loaded from history — generate to rerun.");
+              document.getElementById("goal").focus();
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            });
+          });
+        } catch {
+          runsEl.innerHTML = `<p class="history-error">Couldn't load run history. <button class="cta reuse-btn" type="button" onclick="loadRuns()">Retry</button></p>`;
+        }
       }
 
-      function hidePanels() {
-        result.hidden = true;
-        compareResult.hidden = true;
+      function relTime(created) {
+        if (!created) return "";
+        const t = new Date(String(created).includes("T") ? created : String(created).replace(" ", "T") + "Z");
+        if (isNaN(t.getTime())) return "";
+        const mins = Math.round((Date.now() - t.getTime()) / 60000);
+        if (mins < 1) return "just now";
+        if (mins < 60) return `${mins}m ago`;
+        const hrs = Math.round(mins / 60);
+        if (hrs < 24) return `${hrs}h ago`;
+        return `${Math.round(hrs / 24)}d ago`;
       }
 
+      /* ---------- shared state helpers ---------- */
+      function startBusy(message) {
+        busy = true;
+        setStatus(message);
+        ["run", "runCompare", "runAction"].forEach((id) => document.getElementById(id).disabled = true);
+      }
+      function endBusy() {
+        busy = false;
+        ["run", "runCompare", "runAction"].forEach((id) => document.getElementById(id).disabled = false);
+      }
+      function setStatus(message, isError) {
+        statusEl.textContent = message || "";
+        statusEl.className = isError ? "is-error" : "";
+      }
+      function shortModel(model) {
+        return String(model || "").split("/").pop() || "model";
+      }
       function escapeHtml(value) {
         return String(value)
           .replaceAll("&", "&amp;")
           .replaceAll("<", "&lt;")
           .replaceAll(">", "&gt;");
       }
-
       function encodeAttr(value) {
-        return String(value).replaceAll('"', '&quot;').replaceAll("'", "&#39;");
+        return escapeHtml(value).replaceAll('"', "&quot;").replaceAll("'", "&#39;");
       }
 
+      /* ---------- boot ---------- */
+      async function checkHealth() {
+        try {
+          const res = await fetch("/api/health");
+          const ok = res.ok && (await res.json()).status === "ok";
+          healthEl.classList.toggle("is-live", ok);
+          healthEl.classList.toggle("is-down", !ok);
+          healthText.textContent = ok ? "api live" : "api unreachable";
+        } catch {
+          healthEl.classList.add("is-down");
+          healthText.textContent = "api unreachable";
+        }
+      }
+      checkHealth();
       loadRuns();
     </script>
   </body>
