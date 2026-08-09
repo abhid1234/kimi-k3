@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.pyc
+
+data/*.db
+data/*.sqlite
+data/*.sqlite3
+
+.env
+.env.local
+.DS_Store
+/.coverage
+.pytest_cache/
+.vercel

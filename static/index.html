@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kimi K3 Planner</title>
+    <style>
+      :root { font-family: system-ui, -apple-system, Segoe UI, sans-serif; color: #0f172a; }
+      body { margin: 0; padding: 24px; background: #f8fafc; }
+      .container { max-width: 1100px; margin: 0 auto; }
+      h1 { margin-top: 0; }
+      .grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; }
+      .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+      .row { display: flex; gap: 12px; }
+      .row > div { flex: 1; }
+      label { display:block; margin: 10px 0 4px; font-weight: 600; }
+      textarea, input, button, select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font: inherit; }
+      button { background: #0f172a; color: white; cursor: pointer; font-weight: 600; border: none; margin-top: 12px; }
+      button.secondary { background: #334155; }
+      button.small { width: auto; padding: 8px 12px; margin-top: 4px; }
+      .muted { color: #64748b; font-size: 0.9rem; }
+      .pill { display: inline-block; border-radius: 999px; padding: 2px 10px; background: #e2e8f0; margin-right: 8px; }
+      .error { color: #b91c1c; }
+      code { background: #f1f5f9; padding: 0 4px; border-radius: 4px; }
+      ul { margin: 4px 0 0; }
+      .columns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      .plan-block { border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; }
+      .meta { font-size: 0.87rem; color: #334155; margin-bottom: 8px; }
+      .chip { display: inline-block; border-radius: 999px; padding: 2px 10px; background: #0f172a; color: white; font-size: 11px; margin-right: 6px; }
+      .history-item { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px dashed #e2e8f0; padding: 8px 0; }
+      .history-item:last-child { border-bottom: 0; }
+      .left { max-width: 82%; }
+      .right { color: #64748b; white-space: nowrap; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Kimi K3 Planner</h1>
+      <div class="card">
+        <p class="muted">Playground that turns a goal into a structured execution plan using Fireworks models.</p>
+
+        <div class="row" style="margin-bottom: 12px;">
+          <button id="exampleLaunch" class="small" type="button">Load Example: launch an MVP</button>
+          <button id="exampleGrowth" class="small secondary" type="button">Load Example: grow monthly revenue</button>
+          <button id="exampleClean" class="small secondary" type="button">Load Example: reduce onboarding friction</button>
+        </div>
+
+        <label for="goal">Goal</label>
+        <textarea id="goal" rows="4" placeholder="e.g., Plan a personal AI side project MVP"></textarea>
+
+        <div class="row">
+          <div>
+            <label for="constraints">Constraints</label>
+            <input id="constraints" placeholder="Budget, time, stack constraints">
+          </div>
+          <div>
+            <label for="tone">Tone</label>
+            <select id="tone">
+              <option value="clear">Clear</option>
+              <option value="concise">Concise</option>
+              <option value="executive">Executive</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="context">Context</label>
+            <textarea id="context" rows="3" placeholder="Existing codebase, team size, risks to consider"></textarea>
+          </div>
+          <div>
+            <label for="blocker">Challenge / Blocker (for wow mode)</label>
+            <textarea id="blocker" rows="3" placeholder="e.g., only 90 mins/day and max $100 spend"></textarea>
+          </div>
+        </div>
+
+        <div class="row">
+          <button id="run" type="button">Generate plan</button>
+          <button id="runCompare" class="secondary" type="button">Generate Compare View</button>
+          <button id="runAction" class="secondary" type="button">Give me first 3 actions</button>
+        </div>
+
+        <p class="muted">This calls your Fireworks key server-side and records each run to SQLite.</p>
+        <p id="status" class="muted"></p>
+      </div>
+
+      <div class="grid">
+        <div>
+          <div class="card" id="result" hidden>
+            <h3>Plan</h3>
+            <div class="meta" id="runMeta"></div>
+            <div id="singlePlan"></div>
+          </div>
+
+          <div class="card" id="compareResult" hidden>
+            <h3>Compare View</h3>
+            <div class="columns" id="comparePlans"></div>
+          </div>
+        </div>
+
+        <div>
+          <div class="card">
+            <h3>Run Replay</h3>
+            <button id="reloadRuns" class="small secondary" type="button">Refresh run history</button>
+            <div id="runs" class="muted">Loading history...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const status = document.getElementById("status");
+      const result = document.getElementById("result");
+      const runMeta = document.getElementById("runMeta");
+      const singlePlan = document.getElementById("singlePlan");
+      const compareResult = document.getElementById("compareResult");
+      const comparePlans = document.getElementById("comparePlans");
+      const runsEl = document.getElementById("runs");
+
+      const examples = {
+        launch: {
+          goal: "Plan a 7-day launch for a one-person AI side project with measurable retention metrics",
+          constraints: "1 week timeline, no paid ads, mobile-friendly",
+          context: "Solo founder, no backend experience",
+          tone: "clear"
+        },
+        growth: {
+          goal: "Create a 30-day content-to-revenue plan for an AI newsletter audience of 2,000 people",
+          constraints: "2 posts per week, avoid extra tools",
+          context: "Content creator with existing email list",
+          tone: "executive"
+        },
+        clean: {
+          goal: "Reduce onboarding friction for a productivity app and improve activation conversion",
+          constraints: "Keep existing identity provider, no redesign beyond 2 weeks",
+          context: "Product has 1,000 weekly users",
+          tone: "concise"
+        }
+      };
+
+      document.getElementById("run").addEventListener("click", () => runSingle());
+      document.getElementById("runCompare").addEventListener("click", () => runCompare());
+      document.getElementById("runAction").addEventListener("click", () => runActionFirst());
+      document.getElementById("reloadRuns").addEventListener("click", loadRuns);
+      document.getElementById("exampleLaunch").addEventListener("click", () => fillExample(examples.launch));
+      document.getElementById("exampleGrowth").addEventListener("click", () => fillExample(examples.growth));
+      document.getElementById("exampleClean").addEventListener("click", () => fillExample(examples.clean));
+
+      function fillExample(data) {
+        document.getElementById("goal").value = data.goal;
+        document.getElementById("constraints").value = data.constraints;
+        document.getElementById("context").value = data.context;
+        document.getElementById("tone").value = data.tone;
+      }
+
+      function buildPayload(override) {
+        const goal = document.getElementById("goal").value.trim();
+        const constraints = document.getElementById("constraints").value.trim();
+        const context = document.getElementById("context").value.trim();
+        const tone = document.getElementById("tone").value;
+        const blocker = document.getElementById("blocker").value.trim();
+
+        const payload = {
+          goal,
+          constraints: constraints || null,
+          context: context || null,
+          tone
+        };
+
+        if (blocker) {
+          payload.constraints = payload.constraints ? `${payload.constraints}. Extra challenge: ${blocker}` : `Challenge: ${blocker}`;
+        }
+
+        return Object.assign(payload, override || {});
+      }
+
+      function computeScore(data) {
+        const steps = Array.isArray(data.plan) ? data.plan.length : 0;
+        const hasAssumptions = (data.assumptions || []).length > 0;
+        const hasRisks = (data.risks || []).length > 0;
+        const hasActions = (data.next_actions || []).length > 0;
+        const clarity = Math.min(100, 40 + steps * 12 + (hasAssumptions ? 10 : 0) + (hasRisks ? 10 : 0) + (hasActions ? 10 : 0));
+        return clarity;
+      }
+
+      async function runSingle(options) {
+        const payload = buildPayload(options);
+        setLoadingState("Generating...");
+        hidePanels();
+        try {
+          const data = await postPlan(payload);
+          const budget = data.daily_spend_usd != null && data.daily_budget_usd != null
+            ? ` • spend today ${escapeHtml(Number(data.daily_spend_usd).toFixed(2))}/${escapeHtml(Number(data.daily_budget_usd).toFixed(2))}`
+            : "";
+          runMeta.innerHTML = `<span class="chip">${escapeHtml(data.status || "success")}</span>` +
+            `Run #${escapeHtml(String(data.id))} • latency ${escapeHtml(String(data.latency_ms))}ms • model ${escapeHtml(data.model)} •` +
+            ` quality score ${escapeHtml(String(computeScore(data.data || {})))} /100${budget}`;
+          singlePlan.innerHTML = renderPlan(data.data || {});
+          result.hidden = false;
+          status.textContent = "Plan ready.";
+          status.className = "muted";
+          await loadRuns();
+        } catch (e) {
+          status.textContent = `Error: ${e.message}`;
+          status.className = "error";
+        }
+      }
+
+      async function runCompare() {
+        const base = buildPayload();
+        setLoadingState("Generating compare view...");
+        comparePlans.innerHTML = "";
+        compareResult.hidden = false;
+        try {
+          const variants = [
+            { label: "Current constraints", tone: base.tone, c: base.constraints },
+            { label: "Speed-first", tone: "concise", constraints: `${base.constraints || "No constraints"}; prioritize speed` },
+            { label: "Risk-minimized", tone: "executive", constraints: `${base.constraints || "No constraints"}; prioritize low risk` }
+          ];
+
+          const results = await Promise.all(
+            variants.map((v) => postPlan({ ...base, tone: v.tone, constraints: v.constraints }))
+          );
+
+          results.forEach((body, idx) => {
+            const score = computeScore(body.data || {});
+            const block = document.createElement("div");
+            block.className = "plan-block";
+            block.innerHTML = `<h4>${escapeHtml(variants[idx].label)}</h4>` +
+              `<div class="meta"><span class="chip">${escapeHtml(body.model || "")}</span>` +
+              `Score ${escapeHtml(String(score))}/100 • ${escapeHtml(String(body.latency_ms || ""))}ms</div>` +
+              renderPlan(body.data || {});
+            comparePlans.appendChild(block);
+          });
+
+          status.textContent = "Compare generation complete.";
+          status.className = "muted";
+          await loadRuns();
+          result.hidden = true;
+        } catch (e) {
+          status.textContent = `Error: ${e.message}`;
+          status.className = "error";
+          compareResult.hidden = true;
+        }
+      }
+
+      async function runActionFirst() {
+        const payload = buildPayload({
+          context: (document.getElementById("context").value.trim() || "") +
+            (document.getElementById("context").value.trim() ? " \n" : "") +
+            "Return only first 3 high-impact actions in order for the next 24 hours, then the rest of the plan."
+        });
+        await runSingle(payload);
+      }
+
+      async function postPlan(payload) {
+        const res = await fetch("/api/plan", {
+          method: "POST",
+          headers: {"content-type": "application/json"},
+          body: JSON.stringify(payload)
+        });
+        const body = await res.json();
+        if (!res.ok) {
+          if (res.status === 429) {
+            throw new Error(body?.detail || "Daily testing cap reached. Try again tomorrow.");
+          }
+          throw new Error(body?.detail || "Request failed");
+        }
+        return body;
+      }
+
+      function renderPlan(data) {
+        const summary = document.createElement("div");
+        summary.innerHTML = `<p><span class=\"pill\">${escapeHtml(data.confidence || "low")}</span> <strong>${escapeHtml(data.summary || "")}</strong></p>`;
+
+        const body = document.createElement("div");
+        body.innerHTML = `
+          <h4>Assumptions</h4><ul>${(data.assumptions || []).map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul>
+          <h4>Plan</h4><ul>${(data.plan || []).map((p) => `<li><strong>Step ${escapeHtml(String(p.step))}:</strong> ${escapeHtml(p.action)} — ${escapeHtml(p.why)} (Risk: ${escapeHtml(p.risk)})</li>`).join("")}</ul>
+          <h4>Risks</h4><ul>${(data.risks || []).map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul>
+          <h4>Next actions</h4><ul>${(data.next_actions || []).slice(0, 5).map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul>
+        `;
+
+        const wrapper = document.createElement("div");
+        wrapper.appendChild(summary);
+        wrapper.appendChild(body);
+        return wrapper.innerHTML;
+      }
+
+      async function loadRuns() {
+        runsEl.textContent = "Loading...";
+        try {
+          const res = await fetch("/api/runs?limit=8");
+          if (!res.ok) {
+            throw new Error("Failed to load run history");
+          }
+          const list = await res.json();
+          if (!list || list.length === 0) {
+            runsEl.innerHTML = "<p class='muted'>No runs yet.</p>";
+            return;
+          }
+          runsEl.innerHTML = list.map((r) => {
+            const goal = escapeHtml(r.goal || "");
+            return `<div class=\"history-item\">\n              <div class=\"left\"><div><strong>#${escapeHtml(String(r.id))}</strong> • ${goal.slice(0, 72)}${goal.length > 72 ? "..." : ""}</div>\n              <div class=\"muted\">${escapeHtml(r.status)} • ${escapeHtml(r.model || "")}</div></div>\n              <div class=\"right\"><button class=\"small secondary\" data-goal=\"${encodeAttr(goal)}\" type=\"button\">Reuse goal</button></div>\n            </div>`;
+          }).join("");
+          runsEl.querySelectorAll("button[data-goal]").forEach((button) => {
+            button.addEventListener("click", (event) => {
+              const goal = event.currentTarget.getAttribute("data-goal") || "";
+              document.getElementById("goal").value = goal;
+              document.getElementById("status").textContent = "Goal loaded from history. Click Generate plan to rerun.";
+            });
+          });
+        } catch (e) {
+          runsEl.innerHTML = `<p class=\"error\">Could not load runs.</p>`;
+        }
+      }
+
+      function setLoadingState(message) {
+        status.textContent = message;
+        status.className = "muted";
+      }
+
+      function hidePanels() {
+        result.hidden = true;
+        compareResult.hidden = true;
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;");
+      }
+
+      function encodeAttr(value) {
+        return String(value).replaceAll('"', '&quot;').replaceAll("'", "&#39;");
+      }
+
+      loadRuns();
+    </script>
+  </body>
+</html>
