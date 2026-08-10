@@ -118,6 +118,14 @@ print(json.loads(urllib.request.urlopen('http://127.0.0.1:8000/api/health').read
 PY
 ```
 
+### Smoke checks (local or deployed)
+
+```bash
+BASE_URL=http://127.0.0.1:8000 scripts/smoke.sh
+# if testing prod:
+BASE_URL=https://kimi-k3-ashy.vercel.app scripts/smoke.sh
+```
+
 ### Docker run
 
 ```bash
@@ -156,6 +164,19 @@ This project can be deployed on Vercel using the project-level `vercel.json` ent
    - `/api/health` returns `{ "status": "ok" }`
    - open `/` and run one generation with an example
    - verify budget cap behavior at /api/plan when exceeded
+
+### One-click style publish cheatsheet
+
+```bash
+cd "/Users/abhijitdas/Documents/Personal projects/kimi-k3"
+vercel --prod
+```
+
+Optional pre-flight before publish:
+
+```bash
+scripts/smoke.sh  # validate against your current local BASE_URL first
+```
 
 ### Tomorrow launch checklist (minimum)
 

@@ -16,9 +16,9 @@
 - [ ] Final social copy approved (X + Substack)
 
 ## Non-blocking quality to finish
-- [ ] Verify `.env` and Vercel env examples in onboarding docs are clear
-- [ ] Add deployment command cheatsheet for one-click publish
-- [ ] Add launch artifact links (`FACTS`, `README`, posts)
+- [x] Verify `.env` and Vercel env examples in onboarding docs are clear
+- [x] Add deployment command cheatsheet for one-click publish
+- [x] Add launch artifact links (`FACTS`, `README`, posts)
 
 ## Target launch state (tomorrow)
 - Public repo exists and CI/docs are clean
