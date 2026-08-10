@@ -1,14 +1,38 @@
 from __future__ import annotations
 
 from typing import List, Literal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class PlanRequest(BaseModel):
     goal: str = Field(..., min_length=10, max_length=2000)
     constraints: str | None = Field(default=None, max_length=1000)
     context: str | None = Field(default=None, max_length=2000)
-    tone: Literal["clear", "concise", "executive"] = "clear"
+    tone: str = "clear"
+
+    @field_validator("tone")
+    @classmethod
+    def normalize_tone(cls, value: str) -> str:
+        if not isinstance(value, str):
+            return "clear"
+
+        normalized = value.strip().lower()
+        tone_aliases = {
+            "concise": "concise",
+            "short": "concise",
+            "brief": "concise",
+            "executive": "executive",
+            "business": "executive",
+            "confident": "clear",
+            "confidently": "clear",
+            "professional": "executive",
+            "formal": "executive",
+            "friendly": "clear",
+            "chatty": "clear",
+            "simple": "clear",
+            "clear": "clear",
+        }
+        return tone_aliases.get(normalized, "clear")
 
 
 class PlanStep(BaseModel):

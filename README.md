@@ -141,7 +141,7 @@ This project can be deployed on Vercel using the project-level `vercel.json` ent
    ```
 3. Set environment variables in Vercel (Project Settings → Environment Variables):
    - `FIREWORKS_API_KEY` (required)
-   - `FIREWORKS_MODEL` (default is `accounts/fireworks/models/llama-v3p3-70b-instruct`)
+   - `FIREWORKS_MODEL` (default is `accounts/fireworks/models/gpt-oss-120b`)
    - `FIREWORKS_TEMPERATURE` (optional)
    - `FIREWORKS_MAX_TOKENS` (optional)
    - `KIMI_DAILY_BUDGET_USD` (default `5`)
@@ -159,6 +159,13 @@ This project can be deployed on Vercel using the project-level `vercel.json` ent
 
 ### Tomorrow launch checklist (minimum)
 
+Launch artifacts live in [`launch/`](launch/):
+- `launch/LAUNCH_CHECKLIST.md`
+- `launch/FACTS.md`
+- `launch/X_TWEET.md`
+- `launch/SUBSTACK_DRAFT.md`
+- `launch/README.md`
+
 - [ ] Deploy target is set (Railway/Render/Fly/Vercel-compatible platform).
 - [ ] Set env var: `FIREWORKS_API_KEY`.
 - [ ] Optional tuning envs: `FIREWORKS_MODEL`, `FIREWORKS_TEMPERATURE`, `FIREWORKS_MAX_TOKENS`.
@@ -175,4 +182,5 @@ This project can be deployed on Vercel using the project-level `vercel.json` ent
 ## Known behavior
 
 - If `FIREWORKS_API_KEY` is missing, plan generation returns a 502 with a clear error and records a failed run.
+- Tone input is normalized (`confident`, `short`, `business`) to one of `clear`, `concise`, `executive`.
 - If the model returns malformed output (JSON/prompt-shape issues), requests are rejected with a clear validation error.

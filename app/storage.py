@@ -3,7 +3,7 @@ import sqlite3
 import os
 from contextlib import contextmanager
 from pathlib import Path
-from datetime import date
+from datetime import date, datetime, timezone
 from typing import Any
 
 
@@ -110,7 +110,7 @@ def list_runs(limit: int = 20, path: Path | str | None = None) -> list[dict[str,
 
 def get_daily_spend(conn: sqlite3.Connection, day: str | None = None) -> float:
     if day is None:
-        day = date.today().isoformat()
+        day = datetime.now(timezone.utc).date().isoformat()
     query = """
         SELECT COALESCE(SUM(cost_usd), 0.0) AS spend
         FROM runs

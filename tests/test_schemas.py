@@ -17,6 +17,11 @@ class SchemaTests(unittest.TestCase):
         )
         self.assertEqual(req.tone, "concise")
 
+    def test_plan_request_tone_aliases(self) -> None:
+        self.assertEqual(PlanRequest(goal="Build a plan with many details for a startup.", tone="confident").tone, "clear")
+        self.assertEqual(PlanRequest(goal="Ship quickly this sprint.", tone="short").tone, "concise")
+        self.assertEqual(PlanRequest(goal="Prepare a director-level memo and timeline.", tone="business").tone, "executive")
+
     def test_plan_response_shape(self) -> None:
         payload = {
             "summary": "Ship an MVP quickly.",
