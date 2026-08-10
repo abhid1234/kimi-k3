@@ -13,6 +13,101 @@ from .schemas import PlanResponse
 FIREWORKS_URL = "https://api.fireworks.ai/inference/v1/chat/completions"
 FIREWORKS_TIMEOUT_SECONDS = 30.0
 
+_EXTERNAL_SERVICE_HINTS = {
+    "openai",
+    "anthropic",
+    "google",
+    "aws",
+    "azure",
+    "gcp",
+    "supabase",
+    "firebase",
+    "stripe",
+    "twilio",
+    "sendgrid",
+    "github",
+    "slack",
+    "n8n",
+    "zapier",
+    "notion",
+    "airtable",
+    "figma",
+    "huggingface",
+    "grok",
+    "llama",
+    "chatgpt",
+    "claude",
+    "perplexity",
+}
+
+
+def _is_built_in_only(constraints: str | None) -> bool:
+    if not constraints:
+        return False
+    normalized = constraints.lower()
+    return "built-in" in normalized or "builtin" in normalized or "internal api" in normalized
+
+
+def _clean_service_mentions(text: str) -> tuple[str, int]:
+    cleaned = text
+    hits = 0
+    for term in sorted(_EXTERNAL_SERVICE_HINTS):
+        pattern = re.compile(rf"\b{re.escape(term)}\b", flags=re.I)
+        if pattern.search(cleaned):
+            hits += 1
+            replacement = "internal API" if term not in {"llama", "chatgpt", "gpt", "grok"} else "internal model"
+            cleaned = pattern.sub(replacement, cleaned)
+    return cleaned, hits
+
+
+def _enforce_constraints(parsed: dict[str, Any], constraints: str | None) -> tuple[dict[str, Any], list[str]]:
+    if not isinstance(parsed, dict):
+        return parsed, []
+
+    warnings: list[str] = []
+
+    if _is_built_in_only(constraints):
+        safe_prefix = "Use only built-in platform capabilities and existing system inputs."
+
+        risks = parsed.get("risks")
+        if isinstance(risks, list):
+            for idx, risk in enumerate(risks):
+                if isinstance(risk, str):
+                    cleaned, hits = _clean_service_mentions(risk)
+                    if hits:
+                        warnings.append(f"risk[{idx}] contained {hits} external reference(s)")
+                    risks[idx] = cleaned
+
+        next_actions = parsed.get("next_actions")
+        if isinstance(next_actions, list):
+            for idx, action in enumerate(next_actions):
+                if isinstance(action, str):
+                    cleaned, hits = _clean_service_mentions(action)
+                    if hits:
+                        warnings.append(f"next_actions[{idx}] contained {hits} external reference(s)")
+                    next_actions[idx] = cleaned
+
+        plan = parsed.get("plan")
+        if isinstance(plan, list):
+            for step in plan:
+                if not isinstance(step, dict):
+                    continue
+                for field in ("action", "why"):
+                    value = step.get(field)
+                    if isinstance(value, str):
+                        cleaned, hits = _clean_service_mentions(value)
+                        if hits:
+                            warnings.append(f"plan[{step.get('step', '?')}].{field} contained {hits} external reference(s)")
+                        step[field] = cleaned
+
+        parsed["risks"] = risks if isinstance(risks, list) else parsed.get("risks", [])
+        parsed["next_actions"] = next_actions if isinstance(next_actions, list) else parsed.get("next_actions", [])
+        parsed["summary"] = f"{safe_prefix} {str(parsed.get('summary', '')).strip()}"
+        if warnings and isinstance(parsed.get("risks"), list):
+            parsed["risks"].append("Adjusted to avoid external service references per constraints.")
+
+    return parsed, warnings
+
 
 def _normalize_level(value: Any, *, default: str = "low") -> str:
     if isinstance(value, str):
@@ -132,6 +227,8 @@ async def generate_plan(
             for step in plan:
                 if isinstance(step, dict) and "risk" in step:
                     step["risk"] = _normalize_level(step.get("risk"), default="low")
+
+        parsed, _ = _enforce_constraints(parsed, constraints)
 
     try:
         return PlanResponse.model_validate(parsed)

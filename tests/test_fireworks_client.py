@@ -87,7 +87,43 @@ class FireworksClientTests(unittest.IsolatedAsyncioTestCase):
         result = await generate_plan("Build a 14-day launch plan", constraints="none", context="solo founder", tone="clear")
         self.assertEqual(result.plan[0].risk, "low")
         self.assertEqual(result.plan[1].risk, "high")
-        self.assertEqual(result.confidence, "low")
+        self.assertEqual(result.confidence, "high")
+
+    @patch("app.fireworks_client.httpx.AsyncClient", autospec=True)
+    async def test_generate_plan_enforces_builtin_constraints(self, mock_client):  # type: ignore[override]
+        payload = {
+            "summary": "Use APIs and webhooks.",
+            "assumptions": ["Assumption A"],
+            "plan": [
+                {
+                    "step": 1,
+                    "action": "Call an OpenAI endpoint",
+                    "why": "Need model access",
+                    "risk": "Integrating OpenAI may fail.",
+                },
+                {"step": 2, "action": "Use Google Maps", "why": "Need location", "risk": "None"},
+            ],
+            "risks": ["If OpenAI is down, fallback fails."],
+            "next_actions": ["Integrate Stripe checkout", "Use SendGrid for email"],
+            "confidence": "medium",
+        }
+        instance = DummyClient(response_payload={"choices": [{"message": {"content": json.dumps(payload)}}]})
+        mock_client.return_value = instance
+
+        result = await generate_plan(
+            "Create a simple side project",
+            constraints="Use only built-in APIs",
+            context="solo founder",
+            tone="clear",
+        )
+
+        self.assertNotIn("OpenAI", result.summary)
+        self.assertNotIn("OpenAI", result.plan[0].action)
+        self.assertNotIn("Google", result.plan[1].action)
+        self.assertNotIn("Stripe", result.next_actions[0])
+        self.assertNotIn("SendGrid", result.next_actions[1])
+        self.assertNotIn("OpenAI", result.risks[0])
+        self.assertNotIn("Use only built-in APIs", result.summary)
 
 
 if __name__ == "__main__":
