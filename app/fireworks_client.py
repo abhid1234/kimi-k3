@@ -121,6 +121,66 @@ def _normalize_level(value: Any, *, default: str = "low") -> str:
     return default
 
 
+def _sanitize_list_field(value: Any, *, limit: int | None = None) -> list[str]:
+    if not isinstance(value, list):
+        return []
+
+    result: list[str] = []
+    for item in value:
+        if not isinstance(item, str):
+            continue
+        normalized = item.strip()
+        if normalized:
+            result.append(normalized)
+
+    if limit is not None and len(result) > limit:
+        return result[:limit]
+    return result
+
+
+def _sanitize_plan_steps(plan: Any, *, max_steps: int = 12) -> list[dict[str, Any]]:
+    if not isinstance(plan, list):
+        return []
+
+    sanitized: list[dict[str, Any]] = []
+    valid_idx = 0
+    for idx, step in enumerate(plan):
+        if not isinstance(step, dict):
+            continue
+        valid_idx += 1
+
+        action = step.get("action", f"Execute next action for step {idx + 1}")
+        why = step.get("why", "Proceed with this step.")
+        sequence_no = valid_idx
+
+        risk = step.get("risk", "low")
+        if isinstance(risk, str):
+            risk = _normalize_level(risk, default="low")
+        else:
+            risk = "low"
+
+        sanitized.append(
+            {
+                "step": sequence_no,
+                "action": str(action).strip() or f"Execute next action for step {sequence_no}",
+                "why": str(why).strip() or "Proceed with this step.",
+                "risk": risk,
+            }
+        )
+
+    if not sanitized:
+        sanitized = [
+            {
+                "step": 1,
+                "action": "Start with a small next action and validate progress.",
+                "why": "Create a concrete first signal.",
+                "risk": "low",
+            }
+        ]
+
+    return sanitized[:max_steps]
+
+
 def _extract_json(text: str) -> str:
     # Fireworks responses sometimes wrap JSON in markdown fences or include comments.
     if not text:
@@ -223,10 +283,11 @@ async def generate_plan(
             parsed["confidence"] = _normalize_level(parsed.get("confidence"), default="low")
 
         plan = parsed.get("plan")
-        if isinstance(plan, list):
-            for step in plan:
-                if isinstance(step, dict) and "risk" in step:
-                    step["risk"] = _normalize_level(step.get("risk"), default="low")
+        parsed["assumptions"] = _sanitize_list_field(parsed.get("assumptions"), limit=12)
+        parsed["risks"] = _sanitize_list_field(parsed.get("risks"), limit=12)
+        parsed["next_actions"] = _sanitize_list_field(parsed.get("next_actions"), limit=6)
+        parsed["summary"] = str(parsed.get("summary", "Execution plan ready.")).strip() or "Execution plan ready."
+        parsed["plan"] = _sanitize_plan_steps(plan)
 
         parsed, _ = _enforce_constraints(parsed, constraints)
 

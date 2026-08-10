@@ -125,6 +125,36 @@ class FireworksClientTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("OpenAI", result.risks[0])
         self.assertNotIn("Use only built-in APIs", result.summary)
 
+    @patch("app.fireworks_client.httpx.AsyncClient", autospec=True)
+    async def test_generate_plan_sanitizes_malformed_fields(self, mock_client):  # type: ignore[override]
+        payload = {
+            "summary": "",
+            "assumptions": [""],
+            "plan": [
+                {"step": "two", "action": "", "why": "", "risk": "meh"},
+                "invalid-step",
+                {"step": 0, "action": "Do one thing", "why": "Because", "risk": "extremely high"},
+            ],
+            "risks": [""],
+            "next_actions": ["", 12, None],
+            "confidence": "maybe",
+        }
+        instance = DummyClient(response_payload={"choices": [{"message": {"content": json.dumps(payload)}}]})
+        mock_client.return_value = instance
+
+        result = await generate_plan("Ship a stable launchable product", context="solo", tone="clear")
+
+        self.assertEqual(result.summary, "Execution plan ready.")
+        self.assertEqual(len(result.plan), 2)
+        self.assertEqual(result.plan[0].step, 1)
+        self.assertEqual(result.plan[0].action, "Execute next action for step 1")
+        self.assertEqual(result.plan[1].step, 2)
+        self.assertEqual(result.plan[1].risk, "high")
+        self.assertEqual(result.confidence, "low")
+        self.assertEqual(result.assumptions, [])
+        self.assertEqual(result.risks, [])
+        self.assertEqual(result.next_actions, [])
+
 
 if __name__ == "__main__":
     unittest.main()
