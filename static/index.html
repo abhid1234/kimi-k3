@@ -31,7 +31,7 @@
         --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
         --display: "Archivo", "Archivo Black", var(--sans);
         --radius: 14px;
-        --shadow: 0 1px 2px rgba(21, 34, 45, 0.06), 0 12px 32px -16px rgba(21, 34, 45, 0.25);
+        --shadow: 0 1px 2px rgba(21, 34, 45, 0.05), 0 10px 28px -14px rgba(21, 34, 45, 0.16);
       }
 
       * { box-sizing: border-box; }
@@ -178,14 +178,14 @@
       .sample-chip {
         font: 500 13px/1 var(--sans);
         color: var(--ink-soft);
-        background: var(--paper);
+        background: transparent;
         border: 1px solid var(--line);
         border-radius: 999px;
         padding: 8px 14px;
         cursor: pointer;
-        transition: border-color 120ms ease, color 120ms ease, background 120ms ease;
+        transition: border-color 120ms ease, color 120ms ease;
       }
-      .sample-chip:hover { border-color: var(--signal); color: var(--signal); background: var(--signal-wash); }
+      .sample-chip:hover { border-color: var(--signal); color: var(--signal); }
 
       .field { margin-top: 14px; }
       .field label {
@@ -376,7 +376,8 @@
         border: 1px solid var(--line);
         color: var(--ink-soft);
       }
-      .chip.status-success { background: var(--risk-low-wash); border-color: transparent; color: var(--risk-low); }
+      .chip.status-success { background: transparent; border-color: var(--line-soft); color: var(--risk-low); }
+      .chip.status-sample { background: transparent; border-color: var(--line-soft); color: var(--ink-faint); }
 
       .budget {
         display: flex;
@@ -401,25 +402,21 @@
       .confidence {
         display: inline-flex;
         align-items: center;
-        gap: 7px;
-        font: 500 12px/1 var(--mono);
+        gap: 8px;
+        font: 500 11px/1 var(--mono);
         text-transform: uppercase;
-        letter-spacing: 0.08em;
-        border-radius: 999px;
-        padding: 5px 12px;
-        margin-bottom: 10px;
+        letter-spacing: 0.1em;
+        color: var(--ink-faint);
+        margin-bottom: 12px;
       }
       .confidence .bars { display: inline-flex; gap: 2.5px; align-items: flex-end; }
-      .confidence .bars i { width: 3.5px; border-radius: 1px; background: currentColor; opacity: 0.35; }
+      .confidence .bars i { width: 3.5px; border-radius: 1px; background: var(--line); }
       .confidence .bars i:nth-child(1) { height: 5px; }
       .confidence .bars i:nth-child(2) { height: 8px; }
       .confidence .bars i:nth-child(3) { height: 11px; }
-      .confidence.c-low i:nth-child(1) { opacity: 1; }
-      .confidence.c-medium i:nth-child(-n+2) { opacity: 1; }
-      .confidence.c-high i { opacity: 1; }
-      .confidence.c-low { background: var(--risk-high-wash); color: var(--risk-high); }
-      .confidence.c-medium { background: var(--risk-med-wash); color: var(--risk-med); }
-      .confidence.c-high { background: var(--risk-low-wash); color: var(--risk-low); }
+      .confidence.c-low i:nth-child(1) { background: var(--risk-high); }
+      .confidence.c-medium i:nth-child(-n+2) { background: var(--risk-med); }
+      .confidence.c-high i { background: var(--risk-low); }
       .summary-block p {
         margin: 0;
         font-size: 1.12rem;
@@ -472,15 +469,26 @@
       .step-head strong { font-size: 0.99rem; }
       .risk {
         flex: none;
-        font: 500 11px/1 var(--mono);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font: 500 10.5px/1 var(--mono);
         text-transform: uppercase;
-        letter-spacing: 0.07em;
-        border-radius: 999px;
-        padding: 4px 10px;
+        letter-spacing: 0.1em;
+        padding: 4px 0;
       }
-      .risk-low { background: var(--risk-low-wash); color: var(--risk-low); }
-      .risk-medium { background: var(--risk-med-wash); color: var(--risk-med); }
-      .risk-high { background: var(--risk-high-wash); color: var(--risk-high); }
+      .risk::before {
+        content: "";
+        width: 6px; height: 6px;
+        transform: rotate(45deg);
+        border-radius: 1px;
+      }
+      .risk-low { color: var(--risk-low); }
+      .risk-low::before { border: 1.5px solid var(--risk-low); }
+      .risk-medium { color: var(--risk-med); }
+      .risk-medium::before { background: var(--risk-med); }
+      .risk-high { color: var(--risk-high); font-weight: 600; }
+      .risk-high::before { background: var(--risk-high); box-shadow: 0 0 0 3px var(--risk-high-wash); }
       .step-why {
         margin: 4px 0 0;
         color: var(--ink-soft);
@@ -509,11 +517,9 @@
       .aux li::marker { color: var(--signal-bright); }
 
       .next-actions {
-        margin-top: 26px;
-        padding: 16px 18px;
-        background: var(--signal-wash);
-        border: 1px solid #f0cdbb;
-        border-radius: 12px;
+        margin-top: 28px;
+        padding: 6px 0 6px 20px;
+        border-left: 3px solid var(--signal-bright);
       }
       .next-actions ol { margin: 0; padding-left: 20px; }
       .next-actions li { margin-bottom: 6px; font-weight: 500; font-size: 0.93rem; }
@@ -669,8 +675,9 @@
       .history-list li:last-child { border-bottom: 0; padding-bottom: 2px; }
       .run-dot {
         flex: none;
-        width: 8px; height: 8px;
-        border-radius: 50%;
+        width: 7px; height: 7px;
+        border-radius: 1px;
+        transform: rotate(45deg);
         margin-top: 7px;
       }
       .run-dot.success { background: var(--risk-low); }
@@ -742,12 +749,12 @@
       .strip .trail {
         fill: none;
         stroke: var(--signal-bright);
-        stroke-width: 2;
+        stroke-width: 1.75;
         stroke-linecap: round;
       }
       .strip .trail-shade {
         fill: var(--signal-wash);
-        opacity: 0.55;
+        opacity: 0.35;
         stroke: none;
       }
       .strip .wp { cursor: pointer; outline: none; }
@@ -757,8 +764,8 @@
       .strip .wp.r-medium circle.core { stroke: var(--risk-med); }
       .strip .wp.r-high circle.core { stroke: var(--risk-high); fill: var(--risk-high-wash); }
       .strip .wp text {
-        font: 600 10px var(--mono);
-        fill: var(--ink-soft);
+        font: 500 9px var(--mono);
+        fill: var(--ink-faint);
         text-anchor: middle;
       }
       .strip .wp:hover .halo,
@@ -780,7 +787,7 @@
         animation-delay: calc(140ms + 110ms * var(--i, 0));
       }
       @keyframes trail-draw { to { stroke-dashoffset: 0; } }
-      @keyframes shade-in { to { opacity: 0.55; } }
+      @keyframes shade-in { to { opacity: 0.35; } }
       @keyframes wp-pop { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
 
       /* strip ↔ step-card two-way highlight */
@@ -1163,7 +1170,6 @@
       /* ---------- rendering ---------- */
       function renderMeta(data) {
         runMeta.hidden = false;
-        const score = computeScore(data.data || {});
         let budget = "";
         if (data.daily_spend_usd != null && data.daily_budget_usd != null) {
           const pct = Math.min(100, (Number(data.daily_spend_usd) / Number(data.daily_budget_usd)) * 100);
@@ -1175,8 +1181,7 @@
           `<span class="chip status-${escapeHtml(data.status || "success")}">${escapeHtml(data.status || "success")}</span>` +
           `<span>run #${escapeHtml(String(data.id))}</span>` +
           `<span>${escapeHtml(String(data.latency_ms))}ms</span>` +
-          `<span title="${escapeHtml(data.model || "")}">${escapeHtml(shortModel(data.model))}</span>` +
-          `<span>score ${score}/100</span>` + budget;
+          `<span title="${escapeHtml(data.model || "")}">${escapeHtml(shortModel(data.model))}</span>` + budget;
         runMeta.style.marginBottom = "18px";
       }
 
@@ -1256,8 +1261,8 @@
         const dots = pts.map((p) =>
           `<g class="wp r-${p.risk}" data-step="${p.i}" tabindex="0" role="button" style="--i:${p.i}"` +
           ` aria-label="Step ${escapeHtml(String(p.step))}: ${encodeAttr(p.action)} — ${p.risk} risk. Jump to step.">` +
-          `<circle class="halo" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="12" />` +
-          `<circle class="core" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="6" />` +
+          `<circle class="halo" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="11" />` +
+          `<circle class="core" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="5.5" />` +
           (mini ? "" : `<text x="${p.x.toFixed(1)}" y="${(p.y - 13).toFixed(1)}">${escapeHtml(String(p.step))}</text>`) +
           `</g>`
         ).join("");
