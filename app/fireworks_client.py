@@ -299,6 +299,11 @@ async def generate_plan(
                     "Please retry the request in a short interval."
                 ),
             )
+        if resp.status_code == 502:
+            raise HTTPException(
+                status_code=503,
+                detail="Model provider gateway temporarily unavailable. Retry in a short interval.",
+            )
         if resp.status_code == 429:
             raise HTTPException(status_code=429, detail="Model provider is rate limited. Retry after a short interval.")
         raise RuntimeError(f"Fireworks API error {resp.status_code}: {resp.text[:300]}")

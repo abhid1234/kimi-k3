@@ -1313,13 +1313,16 @@
         runMeta.hidden = true;
         rawJson.classList.remove("is-open");
         const budget = e && e.status === 429;
-        const upstream = e && e.status === 502;
-        const title = budget ? "Daily budget reached" : upstream ? "The model didn't answer" : "That didn't work";
+        const upstream = e && [502, 503].includes(e.status);
+        const schemaFault = e && e.status === 400;
+        const title = budget ? "Daily budget reached" : upstream ? "Model service is temporarily unavailable" : "That didn't work";
         const detail = escapeHtml((e && e.message) || "Request failed.");
         const advice = budget
           ? "The playground caps spend per UTC day. The cap resets at midnight UTC."
           : upstream
-            ? "Fireworks didn't return a usable response. This is usually transient — try again."
+            ? "The model is overloaded or temporarily down. Try again in 20–40 seconds."
+            : schemaFault
+              ? "The model returned an unexpected shape. Try again — this is usually a temporary issue."
             : "Check the inputs and try again.";
         outputZone.innerHTML =
           `<div class="error-state${budget ? " is-budget" : ""}" role="alert">` +

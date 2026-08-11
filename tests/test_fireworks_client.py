@@ -3,6 +3,8 @@ import os
 import unittest
 from unittest.mock import patch
 
+from fastapi import HTTPException
+
 from app.fireworks_client import generate_plan
 
 
@@ -11,6 +13,7 @@ class DummyResp:
         self.status_code = status_code
         self.text = text
         self._payload = payload
+        self.headers = {}
 
     def json(self) -> dict:
         return self._payload
@@ -30,6 +33,23 @@ class DummyClient:
     async def post(self, url, headers=None, json=None):  # noqa: A002
         self.post_calls.append((url, headers, json))
         return DummyResp(200, "ok", self._payload)
+
+
+class DummyFailingClient:
+    def __init__(self, statuses: list[int]) -> None:
+        self.statuses = statuses
+        self.post_calls = []
+
+    async def __aenter__(self) -> "DummyFailingClient":
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb) -> None:  # noqa: ANN001
+        return None
+
+    async def post(self, url, headers=None, json=None):  # noqa: A002
+        self.post_calls.append((url, headers, json))
+        status = self.statuses[min(len(self.post_calls) - 1, len(self.statuses) - 1)]
+        return DummyResp(status, f"error {status}", {})
 
 
 class FireworksClientTests(unittest.IsolatedAsyncioTestCase):
@@ -159,6 +179,30 @@ class FireworksClientTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.assumptions, [])
         self.assertEqual(result.risks, [])
         self.assertEqual(result.next_actions, [])
+
+    @patch("app.fireworks_client.httpx.AsyncClient", autospec=True)
+    async def test_generate_plan_maps_502_to_503(self, mock_client):  # type: ignore[override]
+        mock_client.return_value = DummyFailingClient([502])
+        with self.assertRaises(HTTPException) as ctx:
+            await generate_plan("Build a side project", constraints="low budget", context="solo", tone="clear")
+
+        self.assertEqual(ctx.exception.status_code, 503)
+        self.assertIn("gateway", str(ctx.exception.detail).lower())
+
+    @patch("app.fireworks_client.httpx.AsyncClient", autospec=True)
+    async def test_generate_plan_retries_on_retryable_status(self, mock_client):  # type: ignore[override]
+        mock_client.return_value = DummyFailingClient([503, 503, 503])
+        with self.assertRaises(HTTPException) as ctx:
+            await generate_plan(
+                "Build a launch plan",
+                constraints="low budget",
+                context="solo",
+                tone="clear",
+                timeout_s=1,
+            )
+
+        self.assertEqual(ctx.exception.status_code, 503)
+        self.assertIn("overloaded", str(ctx.exception.detail).lower())
 
 
 if __name__ == "__main__":

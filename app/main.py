@@ -84,8 +84,22 @@ async def create_plan(payload: PlanRequest) -> RunResponse:
     except HTTPException:
         raise
     except ValidationError as exc:
-        raise HTTPException(status_code=400, detail=f"Invalid model response: {exc}") from exc
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid model response. Please try again.",
+        ) from exc
     except Exception as exc:
+        error_message = str(exc)
+        if "Model output schema mismatch" in error_message:
+            user_message = (
+                "Model output could not be parsed into the expected schema. "
+                "Please retry with the same request."
+            )
+        elif "Fireworks API error" in error_message:
+            user_message = error_message
+        else:
+            user_message = error_message
+
         latency_ms = int((time.perf_counter() - started_at) * 1000)
         run_id = write_run(
             goal=payload.goal,
@@ -98,9 +112,9 @@ async def create_plan(payload: PlanRequest) -> RunResponse:
             cost_usd=estimated_cost_usd,
             response_json=None,
             raw_output=None,
-            error=str(exc),
+            error=user_message,
         )
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+        raise HTTPException(status_code=502, detail=user_message) from exc
 
     latency_ms = int((time.perf_counter() - started_at) * 1000)
     run_id = write_run(
