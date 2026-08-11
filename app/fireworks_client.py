@@ -3,9 +3,11 @@ from __future__ import annotations
 import json
 import os
 import re
+import asyncio
 from typing import Any, List
 
 import httpx
+from fastapi import HTTPException
 
 from .schemas import PlanResponse
 
@@ -265,10 +267,40 @@ async def generate_plan(
         "Content-Type": "application/json",
     }
 
+    max_retries = int(os.environ.get("FIREWORKS_MAX_RETRIES", "2"))
+    base_delay = float(os.environ.get("FIREWORKS_RETRY_DELAY_SECONDS", "0.6"))
+
     async with httpx.AsyncClient(timeout=timeout_s or FIREWORKS_TIMEOUT_SECONDS) as client:
-        resp = await client.post(FIREWORKS_URL, headers=headers, json=payload)
+        for attempt in range(max_retries + 1):
+            resp = await client.post(FIREWORKS_URL, headers=headers, json=payload)
+            if resp.status_code < 400:
+                break
+
+            retryable = resp.status_code in {429, 502, 503, 504}
+            retry_after = resp.headers.get("retry-after")
+            detail = f"Fireworks API error {resp.status_code}: {resp.text[:300]}"
+            if not retryable or attempt >= max_retries:
+                raise RuntimeError(detail)
+
+            delay = base_delay * (2**attempt)
+            if retry_after:
+                try:
+                    delay = max(delay, float(retry_after))
+                except ValueError:
+                    pass
+            await asyncio.sleep(min(delay, 5.0))
 
     if resp.status_code >= 400:
+        if resp.status_code == 503:
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    "Model provider temporarily unavailable or overloaded. "
+                    "Please retry the request in a short interval."
+                ),
+            )
+        if resp.status_code == 429:
+            raise HTTPException(status_code=429, detail="Model provider is rate limited. Retry after a short interval.")
         raise RuntimeError(f"Fireworks API error {resp.status_code}: {resp.text[:300]}")
 
     body = resp.json()
