@@ -18,17 +18,18 @@ curl -fsSL "$BASE_URL/api/runs?limit=5"
 echo
 
 echo "==> Generate plan (tone alias)"
-curl -fsSL -X POST \
+echo "Payload: $PLAN_PAYLOAD"
+curl -sS -D - -X POST \
   -H "content-type: application/json" \
   -d "$PLAN_PAYLOAD" \
-  "$BASE_URL/api/plan"
+  "$BASE_URL/api/plan" | sed -n '1,80p'
 echo
 
 echo "==> Budget guard"
-curl -fsSL -X POST \
+curl -sS -D - -X POST \
   -H "content-type: application/json" \
   -d "{\"goal\":\"Budget check\",\"constraints\":\"Only use built-in APIs\",\"context\":\"capacity test\",\"tone\":\"short\"}" \
-  "$BASE_URL/api/plan" || true
+  "$BASE_URL/api/plan" | sed -n '1,80p' || true
 echo
 
 echo "Smoke complete"

@@ -93,7 +93,10 @@ class FireworksClientTests(unittest.IsolatedAsyncioTestCase):
     async def test_generate_plan_enforces_builtin_constraints(self, mock_client):  # type: ignore[override]
         payload = {
             "summary": "Use APIs and webhooks.",
-            "assumptions": ["Assumption A"],
+            "assumptions": [
+                "Assumption A",
+                "Assuming access to OpenAI or other external model APIs.",
+            ],
             "plan": [
                 {
                     "step": 1,
@@ -118,6 +121,8 @@ class FireworksClientTests(unittest.IsolatedAsyncioTestCase):
         )
 
         self.assertNotIn("OpenAI", result.summary)
+        self.assertNotIn("OpenAI", result.assumptions[1])
+        self.assertIn("internal model", result.assumptions[1])
         self.assertNotIn("OpenAI", result.plan[0].action)
         self.assertNotIn("Google", result.plan[1].action)
         self.assertNotIn("Stripe", result.next_actions[0])

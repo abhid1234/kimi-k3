@@ -100,6 +100,16 @@ def _enforce_constraints(parsed: dict[str, Any], constraints: str | None) -> tup
                             warnings.append(f"plan[{step.get('step', '?')}].{field} contained {hits} external reference(s)")
                         step[field] = cleaned
 
+        assumptions = parsed.get("assumptions")
+        if isinstance(assumptions, list):
+            for idx, assumption in enumerate(assumptions):
+                if isinstance(assumption, str):
+                    cleaned, hits = _clean_service_mentions(assumption)
+                    if hits:
+                        warnings.append(f"assumptions[{idx}] contained {hits} external reference(s)")
+                    assumptions[idx] = cleaned
+            parsed["assumptions"] = assumptions
+
         parsed["risks"] = risks if isinstance(risks, list) else parsed.get("risks", [])
         parsed["next_actions"] = next_actions if isinstance(next_actions, list) else parsed.get("next_actions", [])
         parsed["summary"] = f"{safe_prefix} {str(parsed.get('summary', '')).strip()}"
