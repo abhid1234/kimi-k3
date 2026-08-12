@@ -128,20 +128,27 @@
         align-items: baseline;
         gap: 9px;
         font-family: var(--display);
-        font-variation-settings: "wdth" 86, "wght" 800;
+        font-variation-settings: "wdth" 100, "wght" 780;
         letter-spacing: 0.14em;
         font-size: clamp(0.86rem, 1.9vw, 0.98rem);
         color: #f2f6ff;
         opacity: 0.94;
         text-transform: uppercase;
       }
+      .wordmark .wordmark-title {
+        font-size: 0.98rem;
+        font-variation-settings: "wdth" 85, "wght" 860;
+        letter-spacing: 0.06em;
+        line-height: 1;
+      }
       .wordmark .subtitle {
         margin-left: 2px;
-        font-variation-settings: "wdth" 90, "wght" 600;
-        letter-spacing: 0.16em;
+        font-family: var(--mono);
+        font-variation-settings: normal;
+        letter-spacing: 0.095em;
         color: #91a0bf;
         font-size: 0.76rem;
-        text-transform: none;
+        text-transform: uppercase;
       }
       .wordmark .dot {
         width: 12px;
@@ -971,7 +978,9 @@
       </svg>
       <div class="hero-inner">
         <div class="hero-top">
-          <div class="wordmark"><span class="dot" aria-hidden="true"></span>Kimi K3 <span class="subtitle">planner playground</span></div>
+          <div class="wordmark">
+            <span class="dot" aria-hidden="true"></span><span class="wordmark-title">Kimi K3</span><span class="subtitle">playground</span>
+          </div>
           <div class="health" id="health" role="status"><span class="beacon" aria-hidden="true"></span><span id="healthText">checking api…</span></div>
           <div class="runtime-config" id="runtimeConfig" role="status" aria-live="polite">runtime config loading…</div>
         </div>

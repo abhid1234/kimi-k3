@@ -137,6 +137,22 @@ def _normalize_level(value: Any, *, default: str = "low") -> str:
     return default
 
 
+def _coerce_risk_bucket(value: Any) -> str:
+    if isinstance(value, str):
+        return _normalize_level(value, default="low")
+    if isinstance(value, dict):
+        if "level" in value:
+            return _normalize_level(value.get("level"), default="low")
+        if "risk" in value:
+            return _normalize_level(value.get("risk"), default="low")
+    if isinstance(value, int):
+        if value >= 4:
+            return "high"
+        if value >= 2:
+            return "medium"
+    return "low"
+
+
 def _sanitize_list_field(value: Any, *, limit: int | None = None) -> list[str]:
     if not isinstance(value, list):
         return []
@@ -173,7 +189,7 @@ def _sanitize_plan_steps(plan: Any, *, max_steps: int = 12) -> list[dict[str, An
         if isinstance(risk, str):
             risk = _normalize_level(risk, default="low")
         else:
-            risk = "low"
+            risk = _coerce_risk_bucket(risk)
 
         sanitized.append(
             {
@@ -195,6 +211,29 @@ def _sanitize_plan_steps(plan: Any, *, max_steps: int = 12) -> list[dict[str, An
         ]
 
     return sanitized[:max_steps]
+
+
+def _fallback_plan_payload(parsed: Any) -> dict[str, Any]:
+    if not isinstance(parsed, dict):
+        parsed = {}
+    fallback = {
+        "summary": "Execution plan ready. Regenerated via fallback path to preserve delivery.",
+        "assumptions": _sanitize_list_field(parsed.get("assumptions"), limit=12),
+        "plan": _sanitize_plan_steps(parsed.get("plan"), max_steps=12),
+        "risks": _sanitize_list_field(parsed.get("risks"), limit=12),
+        "next_actions": _sanitize_list_field(parsed.get("next_actions"), limit=6),
+        "confidence": _normalize_level(parsed.get("confidence"), default="low"),
+    }
+    if not fallback["plan"]:
+        fallback["plan"] = [
+            {
+                "step": 1,
+                "action": "Start with one clear action and commit one useful output.",
+                "why": "A plan without an entry point stalls execution.",
+                "risk": "low",
+            }
+        ]
+    return fallback
 
 
 def _extract_json(text: str) -> str:
@@ -357,6 +396,9 @@ async def generate_plan(
         parsed["summary"] = str(parsed.get("summary", "Execution plan ready.")).strip() or "Execution plan ready."
         parsed["plan"] = _sanitize_plan_steps(plan)
 
+        parsed, _ = _enforce_constraints(parsed, constraints)
+    else:
+        parsed = _fallback_plan_payload(parsed)
         parsed, _ = _enforce_constraints(parsed, constraints)
 
     try:
