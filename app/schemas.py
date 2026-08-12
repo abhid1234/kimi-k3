@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Literal
+from typing import List
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -39,16 +39,72 @@ class PlanStep(BaseModel):
     step: int
     action: str
     why: str
-    risk: Literal["low", "medium", "high"] = "low"
+    risk: str = "low"
+
+    @field_validator("risk")
+    @classmethod
+    def normalize_risk(cls, value: str) -> str:
+        if not isinstance(value, str):
+            return "low"
+        lowered = value.strip().lower()
+        if lowered in {"low", "medium", "high"}:
+            return lowered
+        if any(token in lowered for token in {"high", "severe", "critical", "major", "catastrophic"}):
+            return "high"
+        if any(token in lowered for token in {"medium", "moderate", "elevated", "significant"}):
+            return "medium"
+        return "low"
 
 
 class PlanResponse(BaseModel):
     summary: str
-    assumptions: list[str]
+    assumptions: list[str] = []
     plan: list[PlanStep]
-    risks: list[str]
-    next_actions: list[str]
-    confidence: Literal["low", "medium", "high"]
+    risks: list[str] = []
+    next_actions: list[str] = []
+    confidence: str | None = "low"
+
+    @field_validator("confidence", mode="before")
+    @classmethod
+    def normalize_confidence(cls, value: str) -> str:
+        if not isinstance(value, str):
+            return "low"
+        lowered = value.strip().lower()
+        if lowered in {"low", "medium", "high"}:
+            return lowered
+        if any(token in lowered for token in {"high", "severe", "critical", "major", "catastrophic"}):
+            return "high"
+        if any(token in lowered for token in {"medium", "moderate", "elevated", "significant"}):
+            return "medium"
+        return "low"
+
+    @field_validator("summary", mode="before")
+    @classmethod
+    def normalize_summary(cls, value: object) -> str:
+        if value is None:
+            return ""
+        return str(value).strip() or ""
+
+    @field_validator("assumptions", mode="before")
+    @classmethod
+    def normalize_assumptions(cls, value: object) -> list[str]:
+        if not isinstance(value, list):
+            return []
+        return [str(item).strip() for item in value if isinstance(item, str) and str(item).strip()]
+
+    @field_validator("risks", mode="before")
+    @classmethod
+    def normalize_risks(cls, value: object) -> list[str]:
+        if not isinstance(value, list):
+            return []
+        return [str(item).strip() for item in value if isinstance(item, str) and str(item).strip()]
+
+    @field_validator("next_actions", mode="before")
+    @classmethod
+    def normalize_next_actions(cls, value: object) -> list[str]:
+        if not isinstance(value, list):
+            return []
+        return [str(item).strip() for item in value if isinstance(item, str) and str(item).strip()]
 
 
 class RunResponse(BaseModel):
