@@ -142,6 +142,20 @@
       .health.is-live .beacon { background: #4ade80; box-shadow: 0 0 8px 1px rgba(74, 222, 128, 0.7); }
       .health.is-down .beacon { background: var(--neon-magenta); box-shadow: 0 0 8px 1px rgba(255, 79, 216, 0.7); }
 
+      .runtime-config {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-family: var(--mono);
+        font-size: 11px;
+        color: #9fb0d3;
+        background: rgba(255, 255, 255, 0.045);
+        border: 1px solid rgba(255, 255, 255, 0.11);
+        border-radius: 999px;
+        padding: 6px 11px;
+        white-space: nowrap;
+      }
+
       .hero h1 {
         margin: 0 auto 18px;
         font-family: var(--display);
@@ -924,6 +938,7 @@
         <div class="hero-top">
           <div class="wordmark"><span class="dot" aria-hidden="true"></span>KIMI K3 · PLANNING PLAYGROUND</div>
           <div class="health" id="health" role="status"><span class="beacon" aria-hidden="true"></span><span id="healthText">checking api…</span></div>
+          <div class="runtime-config" id="runtimeConfig" role="status" aria-live="polite">runtime config loading…</div>
         </div>
         <h1>Goal in. <span class="route-out">Route out.</span></h1>
         <p class="sub">One sentence becomes an ordered, risk-rated execution plan — <strong>steps, assumptions, risks, and your next three moves</strong>. Runs server-side on Fireworks and lands in your run history.</p>
@@ -1050,6 +1065,7 @@
       const goalField = document.getElementById("goalField");
       const healthEl = document.getElementById("health");
       const healthText = document.getElementById("healthText");
+      const runtimeConfigEl = document.getElementById("runtimeConfig");
 
       let lastResponse = null;
       let busy = false;
@@ -1604,9 +1620,27 @@
 
       /* ---------- boot ---------- */
       async function checkHealth() {
+        let cfg = null;
+        try {
+          const cfgRes = await fetch("/api/config");
+          if (cfgRes.ok) {
+            cfg = await cfgRes.json();
+            const dailyBudget = Number(cfg.daily_budget_usd || 0);
+            const budgetText = Number.isFinite(dailyBudget) ? `${dailyBudget.toFixed(2)}/day cap` : "runtime cap";
+            runtimeConfigEl.textContent = `model ${shortModel(cfg.model)} · ${budgetText} · cap ${cfg.hard_cap_enabled ? "on" : "off"}`;
+          } else {
+            runtimeConfigEl.textContent = "runtime config unavailable";
+          }
+        } catch {
+          runtimeConfigEl.textContent = "runtime config unavailable";
+        }
+
         try {
           const res = await fetch("/api/health");
           const ok = res.ok && (await res.json()).status === "ok";
+          if (cfg && cfg.model && !cfg.hard_cap_enabled) {
+            runtimeConfigEl.textContent = `model ${shortModel(cfg.model)} · cap off`;
+          }
           healthEl.classList.toggle("is-live", ok);
           healthEl.classList.toggle("is-down", !ok);
           healthText.textContent = ok ? "api live" : "api unreachable";

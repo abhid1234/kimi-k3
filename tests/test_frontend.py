@@ -22,7 +22,7 @@ class FrontendContractTests(unittest.TestCase):
             "goal", "constraints", "context", "blocker",
             "run", "runCompare", "runAction",
             "copyPlan", "toggleRaw", "reloadRuns",
-            "status", "runs", "rawJson", "health",
+            "status", "runs", "rawJson", "health", "runtimeConfig",
         ):
             self.assertIn(f'id="{element_id}"', self.html, f"missing #{element_id}")
 
@@ -62,6 +62,8 @@ class FrontendContractTests(unittest.TestCase):
         # the frontend must keep posting the same payload shape to the same endpoint
         self.assertIn('fetch("/api/plan"', self.html)
         self.assertIn("{ goal, constraints: constraints || null, context: context || null, tone }", self.html)
+        self.assertIn('fetch("/api/config"', self.html)
+        self.assertIn("runtimeConfigEl", self.html)
 
 
 if __name__ == "__main__":

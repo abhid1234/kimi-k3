@@ -8,6 +8,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
 from pydantic import ValidationError
 
 from .fireworks_client import generate_plan
@@ -18,6 +19,14 @@ from .storage import get_conn, ensure_schema, list_runs, write_run, get_daily_sp
 ROOT = Path(__file__).resolve().parent.parent
 STATIC_DIR = ROOT / "static"
 DATA_DIR = Path(os.environ.get("KIMI_DB_PATH", str(ROOT / "data" / "runs.db"))).parent
+
+
+class AppConfig(BaseModel):
+    model: str
+    daily_budget_usd: float
+    estimated_cost_usd: float
+    hard_cap_enabled: bool
+    runtime_version: str
 
 app = FastAPI(title="Kimi K3 Planner")
 app.add_middleware(
@@ -41,6 +50,30 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+def _get_runtime_config() -> dict[str, float | str | bool]:
+    daily_budget_usd = float(os.environ.get("KIMI_DAILY_BUDGET_USD", "5.0"))
+    estimated_cost_usd = float(os.environ.get("KIMI_ESTIMATED_COST_USD", "0.02"))
+    model = os.environ.get("FIREWORKS_MODEL", "accounts/fireworks/models/gpt-oss-120b").strip() or "accounts/fireworks/models/gpt-oss-120b"
+    return {
+        "model": model,
+        "daily_budget_usd": daily_budget_usd,
+        "estimated_cost_usd": estimated_cost_usd,
+        "hard_cap_enabled": daily_budget_usd > 0,
+    }
+
+
+@app.get("/api/config", response_model=AppConfig)
+def config() -> AppConfig:
+    cfg = _get_runtime_config()
+    return AppConfig(
+        model=cfg["model"],
+        daily_budget_usd=cfg["daily_budget_usd"],
+        estimated_cost_usd=cfg["estimated_cost_usd"],
+        hard_cap_enabled=cfg["hard_cap_enabled"],
+        runtime_version="kimi-k3-v1",
+    )
+
+
 @app.get("/")
 def index() -> FileResponse:
     return FileResponse(str(STATIC_DIR / "index.html"))
@@ -48,9 +81,10 @@ def index() -> FileResponse:
 
 @app.post("/api/plan", response_model=RunResponse)
 async def create_plan(payload: PlanRequest) -> RunResponse:
-    model = os.environ.get("FIREWORKS_MODEL", "accounts/fireworks/models/gpt-oss-120b")
-    daily_budget_usd = float(os.environ.get("KIMI_DAILY_BUDGET_USD", "5.0"))
-    estimated_cost_usd = float(os.environ.get("KIMI_ESTIMATED_COST_USD", "0.02"))
+    cfg = _get_runtime_config()
+    model = cfg["model"]
+    daily_budget_usd = float(cfg["daily_budget_usd"])
+    estimated_cost_usd = float(cfg["estimated_cost_usd"])
     if daily_budget_usd <= 0:
         raise HTTPException(status_code=500, detail="KIMI_DAILY_BUDGET_USD must be greater than 0")
     if estimated_cost_usd <= 0:
