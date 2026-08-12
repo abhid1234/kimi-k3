@@ -57,7 +57,11 @@ def _clean_service_mentions(text: str) -> tuple[str, int]:
         pattern = re.compile(rf"\b{re.escape(term)}\b", flags=re.I)
         if pattern.search(cleaned):
             hits += 1
-            replacement = "internal API" if term not in {"llama", "chatgpt", "gpt", "grok"} else "internal model"
+            replacement = (
+                "internal model"
+                if term in {"openai", "anthropic", "llama", "chatgpt", "gpt", "grok", "claude", "perplexity"}
+                else "internal API"
+            )
             cleaned = pattern.sub(replacement, cleaned)
     return cleaned, hits
 
@@ -278,9 +282,26 @@ async def generate_plan(
 
             retryable = resp.status_code in {429, 502, 503, 504}
             retry_after = resp.headers.get("retry-after")
-            detail = f"Fireworks API error {resp.status_code}: {resp.text[:300]}"
             if not retryable or attempt >= max_retries:
-                raise RuntimeError(detail)
+                if resp.status_code == 503:
+                    raise HTTPException(
+                        status_code=503,
+                        detail=(
+                            "Model provider temporarily unavailable or overloaded. "
+                            "Please retry the request in a short interval."
+                        ),
+                    )
+                if resp.status_code == 502:
+                    raise HTTPException(
+                        status_code=503,
+                        detail="Model provider gateway temporarily unavailable. Retry in a short interval.",
+                    )
+                if resp.status_code == 429:
+                    raise HTTPException(status_code=429, detail="Model provider is rate limited. Retry after a short interval.")
+                raise HTTPException(
+                    status_code=502,
+                    detail=f"Fireworks API error {resp.status_code}: {resp.text[:300]}",
+                )
 
             delay = base_delay * (2**attempt)
             if retry_after:
