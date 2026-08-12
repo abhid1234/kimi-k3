@@ -21,7 +21,7 @@ class FrontendContractTests(unittest.TestCase):
         for element_id in (
             "goal", "constraints", "context", "blocker",
             "run", "runCompare", "runAction",
-            "copyPlan", "toggleRaw", "reloadRuns",
+            "copyPlan", "sharePlan", "toggleRaw", "reloadRuns",
             "status", "runs", "rawJson", "health", "runtimeConfig",
         ):
             self.assertIn(f'id="{element_id}"', self.html, f"missing #{element_id}")

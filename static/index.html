@@ -1052,10 +1052,11 @@
         <div class="output-col">
           <!-- Single result -->
           <section class="panel" id="result" aria-labelledby="resultTitle">
-            <div class="panel-head">
+        <div class="panel-head">
               <h3 id="resultTitle">Plan</h3>
               <div class="output-tools" id="resultTools" hidden>
                 <button class="btn btn-ghost btn-mini" id="copyPlan" type="button">Copy as Markdown</button>
+                <button class="btn btn-ghost btn-mini" id="sharePlan" type="button">Copy share link</button>
                 <button class="btn btn-ghost btn-mini" id="toggleRaw" type="button" aria-expanded="false">View raw JSON</button>
               </div>
             </div>
@@ -1146,6 +1147,7 @@
       document.getElementById("runAction").addEventListener("click", () => runActionFirst());
       document.getElementById("reloadRuns").addEventListener("click", loadRuns);
       document.getElementById("copyPlan").addEventListener("click", copyPlanMarkdown);
+      document.getElementById("sharePlan").addEventListener("click", copySharePlanLink);
       document.getElementById("toggleRaw").addEventListener("click", toggleRaw);
       document.getElementById("emptySample").addEventListener("click", () => fillExample(examples.launch, true));
       document.getElementById("heroCta").addEventListener("click", () => {
@@ -1178,7 +1180,20 @@
       }
 
       /* ---------- payload (identical to previous behavior) ---------- */
+      function buildDraftFromFields() {
+        const tone = (document.querySelector('input[name="tone"]:checked') || {}).value || "clear";
+        const blocker = document.getElementById("blocker").value.trim();
+        return {
+          goal: document.getElementById("goal").value.trim(),
+          constraints: document.getElementById("constraints").value.trim(),
+          context: document.getElementById("context").value.trim(),
+          tone,
+          blocker
+        };
+      }
+
       function buildPayload(override) {
+        const draft = buildDraftFromFields();
         const goal = document.getElementById("goal").value.trim();
         const constraints = document.getElementById("constraints").value.trim();
         const context = document.getElementById("context").value.trim();
@@ -1192,6 +1207,69 @@
             : `Challenge: ${blocker}`;
         }
         return Object.assign(payload, override || {});
+      }
+
+      function getSharePayload() {
+        const draft = buildDraftFromFields();
+        return {
+          goal: draft.goal,
+          constraints: draft.constraints || null,
+          context: draft.context || null,
+          tone: draft.tone,
+          blocker: draft.blocker || null
+        };
+      }
+
+      function encodeShareState(state) {
+        return btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+      }
+
+      function decodeShareState(blob) {
+        try {
+          return JSON.parse(decodeURIComponent(escape(atob(blob || ""))));
+        } catch {
+          return null;
+        }
+      }
+
+      function fillShareDraft(state, announce) {
+        if (!state) return false;
+        const goal = String(state.goal || "").slice(0, 2000);
+        const constraints = state.constraints ? String(state.constraints) : "";
+        const context = state.context ? String(state.context) : "";
+        const blocker = state.blocker ? String(state.blocker) : "";
+        const tone = String(state.tone || "").trim();
+
+        document.getElementById("goal").value = goal;
+        document.getElementById("constraints").value = constraints;
+        document.getElementById("context").value = context;
+        document.getElementById("blocker").value = blocker;
+        const toneInput = document.querySelector(`input[name="tone"][value="${tone}"]`);
+        if (toneInput) toneInput.checked = true;
+        goalField.classList.remove("invalid");
+
+        if (announce) setStatus("Loaded share link values. Generate to run.");
+        return true;
+      }
+
+      async function copySharePlanLink() {
+        const draft = getSharePayload();
+        if (!draft.goal || draft.goal.length < 3) {
+          setStatus("Add a goal before generating a share link.", true);
+          return;
+        }
+        const next = new URL(location.href);
+        next.searchParams.delete("demo");
+        next.searchParams.set("share", encodeShareState(draft));
+        const link = next.toString();
+        try {
+          await navigator.clipboard.writeText(link);
+          setStatus("Share link copied to clipboard.");
+          return;
+        } catch {
+          setStatus("Couldn't copy share link. Paste from the address bar instead.", true);
+          return;
+        }
       }
 
       function validateGoal() {
@@ -1667,6 +1745,19 @@
         return true;
       }
 
+      function hydrateShareState() {
+        const share = new URLSearchParams(location.search).get("share");
+        if (!share) return false;
+        const state = decodeShareState(share);
+        if (!state) return false;
+        const hydrated = fillShareDraft(state, true);
+        if (hydrated) {
+          setStatus("Share draft loaded — click Generate plan.");
+          return true;
+        }
+        return false;
+      }
+
       /* ---------- boot ---------- */
       async function checkHealth() {
         let cfg = null;
@@ -1700,7 +1791,10 @@
       }
       checkHealth();
       loadRuns();
-      bootDemo();
+      const hasDemo = bootDemo();
+      if (!hasDemo) {
+        hydrateShareState();
+      }
     </script>
   </body>
 </html>
