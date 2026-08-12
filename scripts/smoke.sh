@@ -7,7 +7,7 @@ set -euo pipefail
 #   [optional] BASE_URL defaults to http://127.0.0.1:8000
 
 BASE_URL="${BASE_URL:-http://127.0.0.1:8000}"
-PLAN_PAYLOAD='{"goal":"Draft a 14-day launch plan for a side AI tool","constraints":"Only use built-in APIs","context":"solo founder","tone":"confident"}'
+PLAN_PAYLOAD='{"goal":"Draft a 14-day launch plan for a side AI tool","constraints":"Only use built-in APIs","context":"solo founder","tone":"concise"}'
 PLAN_PAYLOAD_CANONICAL='{"goal":"Draft a 14-day launch plan for a side AI tool","constraints":"Only use built-in APIs","context":"solo founder","tone":"concise"}'
 
 echo "==> Health"
@@ -56,13 +56,25 @@ post_plan "Generate plan (tone alias)" "$PLAN_PAYLOAD"
 post_plan "Generate plan (canonical tone)" "$PLAN_PAYLOAD_CANONICAL"
 
 echo "==> Runtime config"
-curl -sS -D - "$BASE_URL/api/config" | sed -n '1,60p'
+config_tmp=$(mktemp)
+config_header=$(mktemp)
+if curl -sS -D "$config_header" "$BASE_URL/api/config" -o "$config_tmp"; then
+  config_code=$(sed -n '1p' "$config_header" | awk '{print $2}')
+  sed -n '1,60p' "$config_tmp"
+  if [ "$config_code" != "200" ]; then
+    echo "⚠️ /api/config returned HTTP $config_code. If this is unexpected, check production alias points to latest deploy."
+  fi
+else
+  echo "⚠️ /api/config not available on this deploy. Verify production alias points to latest commit."
+  echo "   If this is a stale deployment, redeploy and re-alias."
+fi
+rm -f "$config_tmp" "$config_header"
 echo
 
 echo "==> Budget guard"
 curl -sS -D - -X POST \
   -H "content-type: application/json" \
-  -d "{\"goal\":\"Budget check\",\"constraints\":\"Only use built-in APIs\",\"context\":\"capacity test\",\"tone\":\"short\"}" \
+  -d "{\"goal\":\"Budget check\",\"constraints\":\"Only use built-in APIs\",\"context\":\"capacity test\",\"tone\":\"concise\"}" \
   "$BASE_URL/api/plan" | sed -n '1,80p' || true
 echo
 
