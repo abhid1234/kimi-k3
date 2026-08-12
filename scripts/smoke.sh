@@ -43,6 +43,8 @@ post_plan() {
   if [ "$status" != "unknown" ] && [ "${status:0:1}" != "2" ]; then
     if [ "$status" = "422" ]; then
       echo "⚠️ 422 tone validation error: this deployment may be using an older schema."
+    elif grep -q "Model output schema mismatch" "$tmp"; then
+      echo "⚠️ response schema mismatch: model output not matching contract."
     else
       echo "⚠️ status=$status for /api/plan"
     fi

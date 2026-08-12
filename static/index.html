@@ -95,26 +95,39 @@
       .hero-top {
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        justify-content: center;
         gap: 16px;
         flex-wrap: wrap;
+        justify-items: center;
         margin-bottom: 56px;
+        padding: 0 6px;
       }
       .wordmark {
         display: flex;
-        align-items: center;
-        gap: 10px;
+        align-items: baseline;
+        gap: 9px;
         font-family: var(--display);
         font-variation-settings: "wdth" 86, "wght" 800;
-        letter-spacing: 0.22em;
-        font-size: 13.5px;
+        letter-spacing: 0.14em;
+        font-size: clamp(0.86rem, 1.9vw, 0.98rem);
         color: #f2f6ff;
+        opacity: 0.94;
+        text-transform: uppercase;
+      }
+      .wordmark .subtitle {
+        margin-left: 2px;
+        font-variation-settings: "wdth" 90, "wght" 600;
+        letter-spacing: 0.16em;
+        color: #91a0bf;
+        font-size: 0.76rem;
+        text-transform: none;
       }
       .wordmark .dot {
-        width: 13px; height: 13px;
+        width: 12px;
+        height: 12px;
         border-radius: 50%;
-        background: var(--neon-cyan);
-        box-shadow: 0 0 10px 1px rgba(47, 224, 255, 0.65), inset 0 0 0 3px var(--hero-bg-0);
+        background: linear-gradient(125deg, var(--neon-cyan), var(--neon-magenta));
+        box-shadow: 0 0 14px 2px rgba(47, 224, 255, 0.68), inset 0 0 0 2px rgba(20, 26, 56, 0.75);
         flex: none;
       }
       /* glass chip treatment shared by the header controls */
@@ -161,10 +174,11 @@
         font-family: var(--display);
         font-variation-settings: "wdth" 80, "wght" 900;
         text-transform: uppercase;
-        font-size: clamp(2.7rem, 7vw, 5rem);
+        font-size: clamp(2.35rem, 6.4vw, 4.4rem);
         line-height: 0.96;
-        letter-spacing: 0.035em;
-        max-width: 16ch;
+        letter-spacing: 0.025em;
+        max-width: 17ch;
+        margin-bottom: 20px;
         color: #f4f7ff;
       }
       .hero h1 .route-out {
@@ -176,7 +190,7 @@
         filter: drop-shadow(0 0 14px rgba(47, 224, 255, 0.38));
       }
       .hero .sub {
-        max-width: 52ch;
+        max-width: 50ch;
         margin: 0 auto;
         color: #aab6d4;
         font-size: 1.06rem;
@@ -936,7 +950,7 @@
       </svg>
       <div class="hero-inner">
         <div class="hero-top">
-          <div class="wordmark"><span class="dot" aria-hidden="true"></span>KIMI K3 · PLANNING PLAYGROUND</div>
+          <div class="wordmark"><span class="dot" aria-hidden="true"></span>Kimi K3 <span class="subtitle">planner playground</span></div>
           <div class="health" id="health" role="status"><span class="beacon" aria-hidden="true"></span><span id="healthText">checking api…</span></div>
           <div class="runtime-config" id="runtimeConfig" role="status" aria-live="polite">runtime config loading…</div>
         </div>
