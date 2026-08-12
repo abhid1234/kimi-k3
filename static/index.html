@@ -102,6 +102,27 @@
         margin-bottom: 56px;
         padding: 0 6px;
       }
+      .hero-rail {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 12px;
+      }
+      .hero-chip {
+        font: 600 0.73rem/1 var(--mono);
+        letter-spacing: 0.095em;
+        text-transform: uppercase;
+        color: #d7e2ff;
+        background: rgba(8, 14, 32, 0.35);
+        border: 1px solid rgba(197, 215, 255, 0.26);
+        border-radius: 999px;
+        padding: 6px 12px;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+      }
+      .hero-chip strong { color: #f7fbff; }
       .wordmark {
         display: flex;
         align-items: baseline;
@@ -956,6 +977,11 @@
         </div>
         <h1>Goal in. <span class="route-out">Route out.</span></h1>
         <p class="sub">One sentence becomes an ordered, risk-rated execution plan — <strong>steps, assumptions, risks, and your next three moves</strong>. Runs server-side on Fireworks and lands in your run history.</p>
+        <div class="hero-rail" aria-label="feature highlights">
+          <span class="hero-chip">Built for founder speed</span>
+          <span class="hero-chip">Compare <strong>3</strong> routes</span>
+          <span class="hero-chip">Live budget guard</span>
+        </div>
         <button class="hero-cta" id="heroCta" type="button"><span class="spark" aria-hidden="true"></span>Start planning</button>
       </div>
     </header>
