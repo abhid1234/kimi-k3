@@ -1119,6 +1119,7 @@
 
       let lastResponse = null;
       let busy = false;
+      let shareMode = "single";
 
       const examples = {
         launch: {
@@ -1216,7 +1217,8 @@
           constraints: draft.constraints || null,
           context: draft.context || null,
           tone: draft.tone,
-          blocker: draft.blocker || null
+          blocker: draft.blocker || null,
+          mode: shareMode
         };
       }
 
@@ -1246,6 +1248,7 @@
         document.getElementById("blocker").value = blocker;
         const toneInput = document.querySelector(`input[name="tone"][value="${tone}"]`);
         if (toneInput) toneInput.checked = true;
+        shareMode = sanitizeShareMode(state.mode) || "single";
         goalField.classList.remove("invalid");
 
         if (announce) setStatus("Loaded share link values. Generate to run.");
@@ -1261,6 +1264,9 @@
         const next = new URL(location.href);
         next.searchParams.delete("demo");
         next.searchParams.set("share", encodeShareState(draft));
+        if (draft.mode && draft.mode !== "single") {
+          next.searchParams.set("shareMode", draft.mode);
+        }
         const link = next.toString();
         try {
           await navigator.clipboard.writeText(link);
@@ -1294,6 +1300,7 @@
       /* ---------- runs ---------- */
       async function runSingle(options) {
         if (busy || !validateGoal()) return;
+        shareMode = "single";
         const payload = buildPayload(options);
         startBusy("Charting the route… usually 5–15 seconds.");
         compareResult.hidden = true;
@@ -1318,6 +1325,7 @@
 
       async function runCompare() {
         if (busy || !validateGoal()) return;
+        shareMode = "compare";
         const base = buildPayload();
         startBusy("Generating three strategies in parallel…");
         comparePlans.innerHTML = skeletonVariants();
@@ -1358,6 +1366,7 @@
 
       async function runActionFirst() {
         if (busy) return;
+        shareMode = "action";
         const context = document.getElementById("context").value.trim();
         await runSingle({
           context: context + (context ? " \n" : "") +
@@ -1745,6 +1754,11 @@
         return true;
       }
 
+      function sanitizeShareMode(value) {
+        if (value === "single" || value === "compare" || value === "action") return value;
+        return "single";
+      }
+
       function hydrateShareState() {
         const share = new URLSearchParams(location.search).get("share");
         if (!share) return false;
@@ -1753,6 +1767,18 @@
         const hydrated = fillShareDraft(state, true);
         if (hydrated) {
           setStatus("Share draft loaded — click Generate plan.");
+          const mode = sanitizeShareMode((new URLSearchParams(location.search).get("shareMode") || state.mode));
+          if (mode) shareMode = mode;
+          const autoRun = new URLSearchParams(location.search).get("auto");
+          if (autoRun === "1" || autoRun === "true" || autoRun === "run") {
+            if (mode === "compare") {
+              runCompare();
+            } else if (mode === "action") {
+              runActionFirst();
+            } else {
+              runSingle();
+            }
+          }
           return true;
         }
         return false;

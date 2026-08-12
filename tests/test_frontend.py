@@ -65,6 +65,12 @@ class FrontendContractTests(unittest.TestCase):
         self.assertIn('fetch("/api/config"', self.html)
         self.assertIn("runtimeConfigEl", self.html)
 
+    def test_share_mode_is_stateful(self) -> None:
+        self.assertIn("function copySharePlanLink()", self.html)
+        self.assertIn("mode: shareMode", self.html)
+        self.assertIn("function sanitizeShareMode", self.html)
+        self.assertIn("shareMode", self.html)
+
 
 if __name__ == "__main__":
     unittest.main()
