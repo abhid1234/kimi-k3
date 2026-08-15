@@ -35,6 +35,10 @@
       }
 
       * { box-sizing: border-box; }
+      /* `display` rules on .output-tools/.meta-line beat the hidden attribute's
+         UA `display:none`, which leaked the copy/share tools onto the empty,
+         loading and error states. Keep hidden actually hidden. */
+      [hidden] { display: none !important; }
       html { scroll-behavior: smooth; }
       body {
         margin: 0;
@@ -56,20 +60,37 @@
 
       /* ---------- Hero (neon brand strip) ---------- */
       :root {
-        --hero-bg-0: #0b0f1e;
-        --hero-bg-1: #141a38;
+        --hero-bg-0: #070a16;
+        --hero-bg-1: #131a3a;
         --neon-cyan: #2fe0ff;
         --neon-magenta: #ff4fd8;
+        --hero-ink: #f3f6ff;
+        --hero-ink-soft: #a9b6d9;
       }
       .hero {
         position: relative;
+        isolation: isolate;
         background:
-          radial-gradient(1100px 420px at 50% -12%, rgba(47, 224, 255, 0.14), transparent 62%),
-          radial-gradient(760px 340px at 82% 108%, rgba(255, 79, 216, 0.12), transparent 60%),
-          linear-gradient(178deg, var(--hero-bg-1), var(--hero-bg-0) 66%);
-        color: #e8ecf8;
+          radial-gradient(1200px 470px at 50% -18%, rgba(47, 224, 255, 0.17), transparent 64%),
+          radial-gradient(820px 380px at 84% 112%, rgba(255, 79, 216, 0.14), transparent 62%),
+          linear-gradient(176deg, var(--hero-bg-1), var(--hero-bg-0) 70%);
+        color: var(--hero-ink);
         overflow: hidden;
-        padding: 40px 24px 136px;
+        padding: 0 0 128px;
+      }
+      /* faint engineering grid for texture — sits under content, over the gradient */
+      .hero::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        background-image:
+          linear-gradient(rgba(150, 180, 255, 0.055) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(150, 180, 255, 0.055) 1px, transparent 1px);
+        background-size: 62px 62px;
+        mask-image: radial-gradient(1000px 420px at 50% 22%, #000 20%, transparent 78%);
+        -webkit-mask-image: radial-gradient(1000px 420px at 50% 22%, #000 20%, transparent 78%);
       }
       /* neon hairline along the hero's lower edge */
       .hero::after {
@@ -77,51 +98,91 @@
         position: absolute;
         left: 0; right: 0; bottom: 0;
         height: 1px;
+        z-index: 3;
         background: linear-gradient(90deg, transparent, var(--neon-cyan) 30%, var(--neon-magenta) 70%, transparent);
-        opacity: 0.55;
+        opacity: 0.7;
       }
       .hero-contours {
         position: absolute;
         inset: 0;
+        z-index: 0;
         pointer-events: none;
-        opacity: 0.4;
+        opacity: 0.34;
       }
-      .hero-inner {
+
+      /* top bar: wordmark hard left, live status hard right — no centered float */
+      .hero-bar {
         position: relative;
-        max-width: 880px;
+        z-index: 2;
+        max-width: 1160px;
         margin: 0 auto;
-        text-align: center;
-      }
-      .hero-top {
+        padding: 20px 24px 0;
         display: flex;
         align-items: center;
-        justify-content: center;
-        gap: 16px;
+        justify-content: space-between;
+        gap: 14px;
         flex-wrap: wrap;
-        justify-items: center;
-        margin-bottom: 56px;
-        padding: 0 6px;
       }
-      .hero-rail {
+      .hero-status {
         display: inline-flex;
         align-items: center;
-        gap: 10px;
+        justify-content: flex-end;
+        gap: 9px;
+        flex-wrap: wrap;
+      }
+
+      .hero-inner {
+        position: relative;
+        z-index: 2;
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 62px 24px 0;
+        text-align: center;
+      }
+      .hero-kicker {
+        margin: 0 0 20px;
+        font: 600 0.7rem/1 var(--mono);
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        color: #8494bd;
+      }
+      .hero-kicker .pip {
+        color: var(--neon-cyan);
+        text-shadow: 0 0 10px rgba(47, 224, 255, 0.8);
+      }
+      .hero-rail {
+        display: flex;
+        align-items: center;
+        gap: 9px;
         flex-wrap: wrap;
         justify-content: center;
-        margin-top: 12px;
+        margin-top: 34px;
       }
       .hero-chip {
-        font: 600 0.73rem/1 var(--mono);
-        letter-spacing: 0.095em;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font: 600 0.72rem/1 var(--mono);
+        letter-spacing: 0.09em;
         text-transform: uppercase;
-        color: #d7e2ff;
-        background: rgba(8, 14, 32, 0.35);
-        border: 1px solid rgba(197, 215, 255, 0.26);
+        color: #c8d5f5;
+        background: rgba(8, 14, 32, 0.42);
+        border: 1px solid rgba(197, 215, 255, 0.2);
         border-radius: 999px;
-        padding: 6px 12px;
+        padding: 7px 13px;
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
       }
+      .hero-chip::before {
+        content: "";
+        width: 5px; height: 5px;
+        border-radius: 50%;
+        background: var(--neon-cyan);
+        box-shadow: 0 0 7px 1px rgba(47, 224, 255, 0.75);
+        flex: none;
+      }
+      .hero-chip:nth-child(2)::before { background: #a78bfa; box-shadow: 0 0 7px 1px rgba(167, 139, 250, 0.75); }
+      .hero-chip:nth-child(3)::before { background: var(--neon-magenta); box-shadow: 0 0 7px 1px rgba(255, 79, 216, 0.75); }
       .hero-chip strong { color: #f7fbff; }
       .wordmark {
         display: flex;
@@ -198,65 +259,98 @@
       }
 
       .hero h1 {
-        margin: 0 auto 18px;
+        margin: 0 auto 20px;
         font-family: var(--display);
-        font-variation-settings: "wdth" 80, "wght" 900;
+        font-variation-settings: "wdth" 78, "wght" 900;
         text-transform: uppercase;
-        font-size: clamp(2.35rem, 6.4vw, 4.4rem);
-        line-height: 0.96;
-        letter-spacing: 0.025em;
-        max-width: 17ch;
-        margin-bottom: 20px;
-        color: #f4f7ff;
+        font-size: clamp(2.7rem, 7.4vw, 5.1rem);
+        line-height: 0.9;
+        letter-spacing: 0.004em;
+        max-width: 15ch;
+        color: #ffffff;
+        text-wrap: balance;
       }
       .hero h1 .route-out {
         display: inline-block;
-        background: linear-gradient(92deg, var(--neon-cyan) 12%, var(--neon-magenta) 88%);
+        background: linear-gradient(92deg, var(--neon-cyan) 8%, #a78bfa 50%, var(--neon-magenta) 92%);
         -webkit-background-clip: text;
         background-clip: text;
         color: transparent;
-        filter: drop-shadow(0 0 14px rgba(47, 224, 255, 0.38));
+        filter: drop-shadow(0 0 18px rgba(47, 224, 255, 0.45));
       }
       .hero .sub {
-        max-width: 50ch;
+        max-width: 54ch;
         margin: 0 auto;
-        color: #aab6d4;
-        font-size: 1.06rem;
+        color: var(--hero-ink-soft);
+        font-size: clamp(1rem, 1.55vw, 1.12rem);
+        line-height: 1.6;
       }
       .hero .sub strong { color: #eef2fc; font-weight: 600; }
+
+      .hero-actions {
+        margin-top: 34px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
       .hero-cta {
-        margin-top: 30px;
         display: inline-flex;
         align-items: center;
         gap: 9px;
         font: 600 0.95rem/1 var(--sans);
         letter-spacing: 0.02em;
-        color: #dbf7ff;
-        background: linear-gradient(180deg, rgba(47, 224, 255, 0.17), rgba(47, 224, 255, 0.07));
-        border: 1px solid rgba(47, 224, 255, 0.55);
+        color: #061018;
+        background: linear-gradient(180deg, #7ef0ff, var(--neon-cyan) 55%, #12c3e6);
+        border: 1px solid rgba(126, 240, 255, 0.9);
         border-radius: 999px;
-        padding: 14px 28px;
+        padding: 15px 30px;
         cursor: pointer;
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        box-shadow: 0 0 22px -8px rgba(47, 224, 255, 0.65), inset 0 0 14px -10px rgba(47, 224, 255, 0.5);
-        transition: box-shadow 200ms ease, border-color 200ms ease, transform 160ms ease;
+        box-shadow: 0 0 34px -10px rgba(47, 224, 255, 0.9), 0 8px 22px -14px rgba(0, 0, 0, 0.9);
+        transition: box-shadow 200ms ease, transform 160ms ease, filter 200ms ease;
       }
       .hero-cta .spark {
         width: 7px; height: 7px;
         border-radius: 50%;
-        background: var(--neon-cyan);
-        box-shadow: 0 0 8px 1px rgba(47, 224, 255, 0.8);
+        background: #061018;
+        box-shadow: 0 0 0 3px rgba(6, 16, 24, 0.16);
         flex: none;
       }
       .hero-cta:hover {
-        border-color: rgba(47, 224, 255, 0.9);
-        box-shadow: 0 0 30px -6px rgba(47, 224, 255, 0.85), inset 0 0 16px -9px rgba(47, 224, 255, 0.7);
+        filter: brightness(1.06);
+        box-shadow: 0 0 44px -6px rgba(47, 224, 255, 0.95), 0 10px 26px -14px rgba(0, 0, 0, 0.9);
         transform: translateY(-1px);
       }
       .hero-cta:active { transform: translateY(0); }
       .hero-cta:focus-visible {
         outline: 2px solid var(--neon-cyan);
+        outline-offset: 3px;
+      }
+      .hero-cta-ghost {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        font: 600 0.95rem/1 var(--sans);
+        letter-spacing: 0.02em;
+        color: #dfe7ff;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(197, 215, 255, 0.28);
+        border-radius: 999px;
+        padding: 15px 26px;
+        cursor: pointer;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        transition: border-color 180ms ease, background 180ms ease, transform 160ms ease;
+      }
+      .hero-cta-ghost:hover {
+        border-color: rgba(255, 79, 216, 0.75);
+        background: rgba(255, 79, 216, 0.09);
+        transform: translateY(-1px);
+      }
+      .hero-cta-ghost:active { transform: translateY(0); }
+      .hero-cta-ghost:focus-visible {
+        outline: 2px solid var(--neon-magenta);
         outline-offset: 3px;
       }
 
@@ -517,6 +611,154 @@
         border-radius: 999px;
         background: var(--signal-bright);
         transition: width 300ms ease;
+      }
+
+      /* ---------- Action Plan Pack (derived client-side from the same schema) ---------- */
+      .pack {
+        margin: 4px 0 22px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: linear-gradient(180deg, #fbfdff, #f4f7fa);
+        overflow: hidden;
+      }
+      .pack-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+        gap: 0;
+      }
+      .pack-cell { padding: 16px 18px; min-width: 0; }
+      .pack-cell + .pack-cell { border-left: 1px solid var(--line-soft); }
+      .pack-label {
+        font: 600 10.5px/1 var(--mono);
+        text-transform: uppercase;
+        letter-spacing: 0.13em;
+        color: var(--ink-faint);
+        margin: 0 0 10px;
+      }
+      .pack-strength { display: flex; align-items: baseline; gap: 9px; }
+      .pack-score {
+        font-family: var(--display);
+        font-variation-settings: "wdth" 100, "wght" 820;
+        font-size: 1.9rem;
+        line-height: 1;
+        color: var(--ink);
+      }
+      .pack-score-max { font: 500 12px/1 var(--mono); color: var(--ink-faint); }
+      .pack-grade {
+        margin-left: auto;
+        font: 600 10.5px/1 var(--mono);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        padding: 5px 9px;
+        border-radius: 999px;
+        border: 1px solid currentColor;
+      }
+      .pack-grade.g-strong { color: var(--risk-low); background: var(--risk-low-wash); }
+      .pack-grade.g-solid { color: var(--risk-med); background: var(--risk-med-wash); }
+      .pack-grade.g-thin { color: var(--risk-high); background: var(--risk-high-wash); }
+      .pack-meter {
+        margin-top: 11px;
+        height: 6px;
+        border-radius: 999px;
+        background: var(--line-soft);
+        overflow: hidden;
+      }
+      .pack-meter i {
+        display: block;
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--signal), var(--signal-bright));
+        width: 0;
+        transition: width 620ms cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      .pack.is-live .pack-meter i { width: var(--w, 0%); }
+      .pack-facets {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 12px;
+      }
+      .facet {
+        font: 500 11px/1 var(--mono);
+        padding: 5px 9px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        color: var(--ink-faint);
+        background: var(--panel);
+      }
+      .facet.on { color: var(--risk-low); border-color: rgba(47, 125, 79, 0.4); background: var(--risk-low-wash); }
+      .facet.off { color: var(--ink-faint); opacity: 0.75; text-decoration: line-through; }
+
+      /* risk mix bar */
+      .mix {
+        display: flex;
+        height: 10px;
+        border-radius: 999px;
+        overflow: hidden;
+        background: var(--line-soft);
+      }
+      .mix i { display: block; height: 100%; transition: width 520ms ease; }
+      .mix .m-low { background: var(--risk-low); }
+      .mix .m-medium { background: var(--risk-med); }
+      .mix .m-high { background: var(--risk-high); }
+      .mix-key {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 10px;
+        font: 500 11.5px/1 var(--mono);
+        color: var(--ink-soft);
+      }
+      .mix-key span { display: inline-flex; align-items: center; gap: 6px; }
+      .mix-key b { width: 8px; height: 8px; border-radius: 2px; flex: none; }
+      .mix-key .k-low b { background: var(--risk-low); }
+      .mix-key .k-medium b { background: var(--risk-med); }
+      .mix-key .k-high b { background: var(--risk-high); }
+
+      /* first moves */
+      .pack-moves { border-top: 1px solid var(--line-soft); padding: 15px 18px 16px; }
+      .moves {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+        gap: 9px;
+      }
+      .moves li {
+        display: flex;
+        gap: 9px;
+        align-items: flex-start;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 10px 12px;
+        background: var(--panel);
+        font-size: 0.9rem;
+        line-height: 1.42;
+        color: var(--ink-soft);
+        transition: border-color 140ms ease, transform 140ms ease;
+      }
+      .moves li:hover { border-color: var(--signal); transform: translateY(-1px); }
+      .moves .n {
+        font: 600 10.5px/1.55 var(--mono);
+        color: #fff;
+        background: var(--signal);
+        border-radius: 6px;
+        width: 17px;
+        height: 17px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: none;
+        margin-top: 1px;
+      }
+      .pack-pin {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
       }
 
       /* ---------- Confidence + summary ---------- */
@@ -782,6 +1024,32 @@
       }
       .error-state h4 { margin: 0 0 4px; font-size: 0.98rem; }
       .error-state p { margin: 0 0 10px; font-size: 0.9rem; color: var(--ink-soft); max-width: 58ch; }
+      .error-kept {
+        margin: 0 0 12px;
+        padding: 10px 12px;
+        border-radius: 9px;
+        border: 1px dashed var(--line);
+        background: rgba(255, 255, 255, 0.6);
+        max-width: 58ch;
+      }
+      .error-kept .kept-label {
+        margin: 0 0 5px;
+        font: 600 10px/1 var(--mono);
+        text-transform: uppercase;
+        letter-spacing: 0.13em;
+        color: var(--ink-faint);
+      }
+      .error-kept .kept-goal {
+        margin: 0 0 5px;
+        font-size: 0.9rem;
+        color: var(--ink);
+        line-height: 1.45;
+      }
+      .error-kept .kept-meta {
+        margin: 0;
+        font: 500 11px/1.4 var(--mono);
+        color: var(--ink-faint);
+      }
 
       /* ---------- History ---------- */
       .history-panel { position: sticky; top: 20px; }
@@ -931,23 +1199,41 @@
         .workspace { grid-template-columns: 1fr; }
         .history-panel { position: static; }
         .compare-cols { grid-template-columns: 1fr; }
-        .hero { padding: 40px 18px 116px; }
+        .hero { padding-bottom: 116px; }
+        .hero-inner { padding-top: 48px; }
         .shell { padding: 0 18px 56px; }
       }
       @media (max-width: 640px) {
-        .hero-top { justify-content: center; margin-bottom: 40px; }
-        .hero-cta { padding: 13px 24px; }
+        .hero-bar { padding: 16px 18px 0; justify-content: center; gap: 10px; }
+        .hero-status { justify-content: center; }
+        .hero-inner { padding: 40px 18px 0; }
+        .hero-kicker { margin-bottom: 14px; letter-spacing: 0.18em; }
+        .hero h1 { max-width: 13ch; }
+        .hero-actions { margin-top: 26px; gap: 10px; }
+        .hero-cta, .hero-cta-ghost { padding: 13px 22px; flex: 1 1 auto; justify-content: center; }
+        .hero-rail { margin-top: 24px; gap: 7px; }
         .composer { padding: 20px 18px 18px; margin-top: -76px; }
         .composer-grid, .aux-grid { grid-template-columns: 1fr; }
         .actions .btn { flex: 1 1 auto; justify-content: center; }
         .kbd-hint { display: none; }
         .panel-head, .panel-body { padding-left: 16px; padding-right: 16px; }
+        .pack-grid { grid-template-columns: 1fr; }
+        .pack-cell + .pack-cell { border-left: 0; border-top: 1px solid var(--line-soft); }
+      }
+      /* 390px-class phones: keep the wordmark row from wrapping into three lines */
+      @media (max-width: 430px) {
+        .hero-bar { flex-direction: column; align-items: center; }
+        .runtime-config { font-size: 10.5px; padding: 5px 10px; }
+        .hero h1 { font-size: clamp(2.2rem, 11.5vw, 2.9rem); }
+        .pack-cell { padding: 14px 15px; }
+        .pack-moves { padding: 13px 15px 14px; }
       }
 
       @media (prefers-reduced-motion: reduce) {
         html { scroll-behavior: auto; }
         .sk { animation: none; }
         .btn, .budget-fill { transition: none; }
+        .pack-meter i, .mix i, .moves li { transition: none; }
         .strip.is-live .trail,
         .strip.is-live .trail-shade,
         .strip.is-live .wp,
@@ -976,22 +1262,28 @@
         <circle cx="1120" cy="96" r="5" fill="#ff4fd8" />
         <circle cx="1120" cy="96" r="10" fill="none" stroke="#ff4fd8" stroke-width="1.5" opacity="0.8" />
       </svg>
-      <div class="hero-inner">
-        <div class="hero-top">
-          <div class="wordmark">
-            <span class="dot" aria-hidden="true"></span><span class="wordmark-title">Kimi K3</span><span class="subtitle">playground</span>
-          </div>
+      <div class="hero-bar">
+        <div class="wordmark">
+          <span class="dot" aria-hidden="true"></span><span class="wordmark-title">Kimi K3</span><span class="subtitle">playground</span>
+        </div>
+        <div class="hero-status">
           <div class="health" id="health" role="status"><span class="beacon" aria-hidden="true"></span><span id="healthText">checking api…</span></div>
           <div class="runtime-config" id="runtimeConfig" role="status" aria-live="polite">runtime config loading…</div>
         </div>
+      </div>
+      <div class="hero-inner">
+        <p class="hero-kicker"><span class="pip" aria-hidden="true">●</span> Planning playground</p>
         <h1>Goal in. <span class="route-out">Route out.</span></h1>
         <p class="sub">One sentence becomes an ordered, risk-rated execution plan — <strong>steps, assumptions, risks, and your next three moves</strong>. Runs server-side on Fireworks and lands in your run history.</p>
+        <div class="hero-actions">
+          <button class="hero-cta" id="heroCta" type="button"><span class="spark" aria-hidden="true"></span>Start planning</button>
+          <button class="hero-cta-ghost" id="heroSample" type="button">See a sample plan</button>
+        </div>
         <div class="hero-rail" aria-label="feature highlights">
-          <span class="hero-chip">Built for founder speed</span>
+          <span class="hero-chip">Risk-rated steps</span>
           <span class="hero-chip">Compare <strong>3</strong> routes</span>
           <span class="hero-chip">Live budget guard</span>
         </div>
-        <button class="hero-cta" id="heroCta" type="button"><span class="spark" aria-hidden="true"></span>Start planning</button>
       </div>
     </header>
 
@@ -1120,6 +1412,8 @@
       let lastResponse = null;
       let busy = false;
       let shareMode = "single";
+      // holds the exact payload of the last failed run so retry re-sends it verbatim
+      let lastFailure = null;
 
       const examples = {
         launch: {
@@ -1156,6 +1450,7 @@
         goal.scrollIntoView({ block: "center" });
         goal.focus({ preventScroll: true });
       });
+      document.getElementById("heroSample").addEventListener("click", () => showSamplePlan(true));
       document.querySelectorAll(".sample-chip").forEach((chip) => {
         chip.addEventListener("click", () => fillExample(examples[chip.dataset.example], true));
       });
@@ -1289,24 +1584,49 @@
         return true;
       }
 
+      /* Plan strength, 0–100. Weighted so a real plan lands in a spread rather
+         than pinning at 100 — the old formula saturated at 5 steps, which made
+         every plan look identical and left compare mode with tied winners.
+         Components sum to exactly 100. Presentation only; no API involvement. */
       function computeScore(data) {
-        const steps = Array.isArray(data.plan) ? data.plan.length : 0;
-        const hasAssumptions = (data.assumptions || []).length > 0;
-        const hasRisks = (data.risks || []).length > 0;
-        const hasActions = (data.next_actions || []).length > 0;
-        return Math.min(100, 40 + steps * 12 + (hasAssumptions ? 10 : 0) + (hasRisks ? 10 : 0) + (hasActions ? 10 : 0));
+        const steps = Array.isArray(data.plan) ? data.plan : [];
+        const n = steps.length;
+        if (n === 0) return 0;
+
+        // depth — 5–8 steps is the runnable sweet spot
+        const depth = n >= 5 && n <= 8 ? 20 : n >= 3 ? 14 : 8;
+
+        // coverage — did the model fill the supporting sections (30 max)
+        const coverage =
+          Math.min(10, (data.assumptions || []).length * 4) +
+          Math.min(10, (data.risks || []).length * 5) +
+          Math.min(10, (data.next_actions || []).length * 4);
+
+        // specificity — reasoning attached to steps, not bare titles (15 max)
+        const withWhy = steps.filter((p) => String(p.why || "").trim().length >= 25).length;
+        const specificity = Math.round((withWhy / n) * 15);
+
+        // risk literacy — rating every step "low" usually means it didn't think (15 max)
+        const rated = new Set(steps.map((p) => String(p.risk || "low").toLowerCase()));
+        const literacy = rated.size >= 3 ? 15 : rated.size === 2 ? 10 : 5;
+
+        // stated confidence (20 max)
+        const conf = String(data.confidence || "low").toLowerCase();
+        const confBonus = conf === "high" ? 20 : conf === "medium" ? 13 : 6;
+
+        return Math.max(0, Math.min(100, depth + coverage + specificity + literacy + confBonus));
       }
 
       /* ---------- runs ---------- */
-      async function runSingle(options) {
-        if (busy || !validateGoal()) return;
-        shareMode = "single";
-        const payload = buildPayload(options);
+      async function executePlan(payload, mode) {
+        if (busy) return;
+        shareMode = mode || "single";
         startBusy("Charting the route… usually 5–15 seconds.");
         compareResult.hidden = true;
         showSkeleton();
         try {
           const data = await postPlan(payload);
+          lastFailure = null;
           lastResponse = data;
           renderMeta(data);
           outputZone.innerHTML = renderPlan(data.data || {});
@@ -1316,11 +1636,27 @@
           setStatus("Plan ready.");
           await loadRuns();
         } catch (e) {
-          renderErrorState(e);
+          lastFailure = { payload, mode: shareMode };
+          renderErrorState(e, payload);
           setStatus(errorHeadline(e), true);
         } finally {
           endBusy();
         }
+      }
+
+      async function runSingle(options, modeOverride) {
+        if (busy || !validateGoal()) return;
+        await executePlan(buildPayload(options), modeOverride || "single");
+      }
+
+      // re-sends the failed request byte-for-byte instead of rebuilding from the form
+      async function retryLast() {
+        if (busy) return;
+        if (!lastFailure) {
+          await runSingle();
+          return;
+        }
+        await executePlan(lastFailure.payload, lastFailure.mode);
       }
 
       async function runCompare() {
@@ -1366,12 +1702,11 @@
 
       async function runActionFirst() {
         if (busy) return;
-        shareMode = "action";
         const context = document.getElementById("context").value.trim();
         await runSingle({
           context: context + (context ? " \n" : "") +
             "Return only first 3 high-impact actions in order for the next 24 hours, then the rest of the plan."
-        });
+        }, "action");
       }
 
       async function postPlan(payload) {
@@ -1433,6 +1768,8 @@
 
         if (compact) return `<div class="plan-view">` + summary + strip + rail + `</div>`;
 
+        const pack = renderPack(data);
+
         const aux =
           `<div class="aux-grid">` +
           `<div class="aux"><h4>Assumptions</h4><ul>${(data.assumptions || []).map((x) => `<li>${escapeHtml(x)}</li>`).join("") || "<li>None stated</li>"}</ul></div>` +
@@ -1444,7 +1781,115 @@
           (data.next_actions || []).slice(0, 5).map((x) => `<li>${escapeHtml(x)}</li>`).join("") +
           `</ol></div>`;
 
-        return `<div class="plan-view">` + summary + strip + rail + aux + next + `</div>`;
+        return `<div class="plan-view">` + summary + pack + strip + rail + aux + next + `</div>`;
+      }
+
+      /* ---------- Action Plan Pack (frontend-only; same schema, no new API) ----------
+         Derives a strength score, the risk mix, and the first three moves from
+         exactly the payload /api/plan already returns. Nothing is fetched. */
+      function packGrade(score) {
+        if (score >= 85) return { cls: "g-strong", label: "strong" };
+        if (score >= 65) return { cls: "g-solid", label: "solid" };
+        return { cls: "g-thin", label: "thin" };
+      }
+
+      function riskMix(steps) {
+        const counts = { low: 0, medium: 0, high: 0 };
+        (steps || []).forEach((p) => {
+          const r = String(p.risk || "low").toLowerCase();
+          if (counts[r] == null) counts.low += 1;
+          else counts[r] += 1;
+        });
+        return counts;
+      }
+
+      function firstMoves(data) {
+        const steps = Array.isArray(data.plan) ? data.plan : [];
+        const actions = (data.next_actions || []).filter(Boolean);
+        return actions.length ? actions.slice(0, 3) : steps.slice(0, 3).map((p) => p.action || "");
+      }
+
+      function renderPack(data) {
+        const steps = Array.isArray(data.plan) ? data.plan : [];
+        if (steps.length === 0) return "";
+        const score = computeScore(data);
+        const grade = packGrade(score);
+        const mix = riskMix(steps);
+        const total = steps.length || 1;
+
+        const facets = [
+          [`${steps.length} steps`, true],
+          ["assumptions", (data.assumptions || []).length > 0],
+          ["risks", (data.risks || []).length > 0],
+          ["next actions", (data.next_actions || []).length > 0]
+        ].map(([label, on]) => `<span class="facet ${on ? "on" : "off"}">${escapeHtml(label)}</span>`).join("");
+
+        const bars = ["low", "medium", "high"]
+          .filter((r) => mix[r] > 0)
+          .map((r) => `<i class="m-${r}" style="width:${((mix[r] / total) * 100).toFixed(1)}%"></i>`)
+          .join("");
+
+        const key = ["low", "medium", "high"]
+          .map((r) => `<span class="k-${r}"><b aria-hidden="true"></b>${mix[r]} ${r}</span>`)
+          .join("");
+
+        const moves = firstMoves(data)
+          .map((m, i) => `<li><span class="n" aria-hidden="true">${i + 1}</span><span>${escapeHtml(m)}</span></li>`)
+          .join("");
+
+        const mixLabel = `Risk mix: ${mix.low} low, ${mix.medium} medium, ${mix.high} high across ${total} steps.`;
+
+        return `<section class="pack" aria-label="Action plan pack">` +
+          `<div class="pack-grid">` +
+            `<div class="pack-cell">` +
+              `<p class="pack-label">Plan strength</p>` +
+              `<div class="pack-strength">` +
+                `<span class="pack-score">${score}</span><span class="pack-score-max">/100</span>` +
+                `<span class="pack-grade ${grade.cls}">${escapeHtml(grade.label)}</span>` +
+              `</div>` +
+              `<div class="pack-meter" role="img" aria-label="Plan strength ${score} out of 100 — ${escapeHtml(grade.label)}">` +
+                `<i style="--w:${score}%"></i></div>` +
+              `<div class="pack-facets">${facets}</div>` +
+            `</div>` +
+            `<div class="pack-cell">` +
+              `<p class="pack-label">Risk mix · ${total} step${total === 1 ? "" : "s"}</p>` +
+              `<div class="mix" role="img" aria-label="${encodeAttr(mixLabel)}">${bars}</div>` +
+              `<div class="mix-key">${key}</div>` +
+            `</div>` +
+          `</div>` +
+          (moves
+            ? `<div class="pack-moves"><div class="pack-pin"><p class="pack-label" style="margin:0">Do these first</p>` +
+              `<button class="btn btn-ghost btn-mini" type="button" id="copyPack">Copy pack</button></div>` +
+              `<ol class="moves">${moves}</ol></div>`
+            : "") +
+          `</section>`;
+      }
+
+      async function copyPackSummary() {
+        const d = (lastResponse && lastResponse.data) || null;
+        if (!d) return;
+        const steps = Array.isArray(d.plan) ? d.plan : [];
+        const mix = riskMix(steps);
+        const score = computeScore(d);
+        const text = [
+          `Plan strength: ${score}/100 (${packGrade(score).label})`,
+          `Risk mix: ${mix.low} low · ${mix.medium} medium · ${mix.high} high across ${steps.length} steps`,
+          `Confidence: ${d.confidence || "low"}`,
+          ``,
+          `Do these first:`,
+          ...firstMoves(d).map((m, i) => `${i + 1}. ${m}`)
+        ].join("\n");
+        try {
+          await navigator.clipboard.writeText(text);
+          const btn = document.getElementById("copyPack");
+          if (btn) {
+            const prev = btn.textContent;
+            btn.textContent = "Copied";
+            setTimeout(() => { btn.textContent = prev; }, 1600);
+          }
+        } catch {
+          setStatus("Couldn't reach the clipboard — use Copy as Markdown instead.", true);
+        }
       }
 
       /* ---------- risk elevation strip (signature) ----------
@@ -1512,6 +1957,18 @@
         const motionOk = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
         root.querySelectorAll(".plan-view").forEach((view) => {
           if (motionOk) view.classList.add("plan-enter");
+
+          const pack = view.querySelector(".pack");
+          if (pack) {
+            if (motionOk) {
+              requestAnimationFrame(() => requestAnimationFrame(() => pack.classList.add("is-live")));
+            } else {
+              pack.classList.add("is-live");
+            }
+            const copyPack = pack.querySelector("#copyPack");
+            if (copyPack) copyPack.addEventListener("click", copyPackSummary);
+          }
+
           const strip = view.querySelector(".strip");
           if (!strip) return;
           if (motionOk) strip.classList.add("is-live");
@@ -1536,7 +1993,7 @@
         });
       }
 
-      function renderErrorState(e) {
+      function renderErrorState(e, payload) {
         resultTools.hidden = true;
         runMeta.hidden = true;
         rawJson.classList.remove("is-open");
@@ -1552,12 +2009,30 @@
             : schemaFault
               ? "The model returned an unexpected shape. Try again — this is usually a temporary issue."
             : "Check the inputs and try again.";
+
+        // keep the user's request visible so a failure never loses what they typed
+        const req = payload || (lastFailure && lastFailure.payload) || null;
+        const goalText = req && req.goal ? String(req.goal) : "";
+        const extras = req
+          ? [req.constraints ? "constraints kept" : "", req.context ? "context kept" : ""].filter(Boolean).join(" · ")
+          : "";
+        const kept = goalText
+          ? `<div class="error-kept">` +
+            `<p class="kept-label">Your request is saved</p>` +
+            `<p class="kept-goal">${escapeHtml(goalText.slice(0, 180))}${goalText.length > 180 ? "…" : ""}</p>` +
+            `<p class="kept-meta">tone: ${escapeHtml((req && req.tone) || "clear")}${extras ? ` · ${escapeHtml(extras)}` : ""}</p>` +
+            `</div>`
+          : "";
+
         outputZone.innerHTML =
           `<div class="error-state${budget ? " is-budget" : ""}" role="alert">` +
           `<span class="mark" aria-hidden="true">${budget ? "◔" : "△"}</span>` +
-          `<div><h4>${title}</h4><p>${detail}</p><p>${advice}</p>` +
-          (budget ? "" : `<button class="btn btn-ghost btn-mini" type="button" onclick="document.getElementById('run').click()">Try again</button>`) +
+          `<div><h4>${title}</h4><p>${detail}</p><p>${advice}</p>` + kept +
+          (budget ? "" : `<button class="btn btn-ghost btn-mini" type="button" id="retryRun">Retry this request</button>`) +
           `</div></div>`;
+
+        const retryBtn = document.getElementById("retryRun");
+        if (retryBtn) retryBtn.addEventListener("click", retryLast);
       }
 
       function errorHeadline(e) {
@@ -1724,6 +2199,35 @@
         next_actions: ["Draft the one-page spec tonight", "Shortlist 3 launch communities", "Set up the managed stack account"]
       };
 
+      /* Renders the bundled sample through the real render path — no API call,
+         no budget spend. Also seeds the composer so "Generate plan" runs it live. */
+      function showSamplePlan(seedComposer) {
+        if (seedComposer) {
+          const ex = examples.launch;
+          document.getElementById("goal").value = ex.goal;
+          document.getElementById("constraints").value = ex.constraints;
+          document.getElementById("context").value = ex.context;
+          const tone = document.querySelector(`input[name="tone"][value="${ex.tone}"]`);
+          if (tone) tone.checked = true;
+          goalField.classList.remove("invalid");
+        }
+        const fake = {
+          id: 0, status: "sample", latency_ms: 0,
+          model: "sample data — no API call",
+          data: DEMO_PLAN, raw_output: JSON.stringify(DEMO_PLAN)
+        };
+        lastResponse = fake;
+        compareResult.hidden = true;
+        outputZone.innerHTML = renderPlan(DEMO_PLAN);
+        activatePlanView(outputZone);
+        resultTools.hidden = false;
+        rawJson.textContent = formatRaw(fake.raw_output);
+        setStatus("Sample plan — nothing was sent to the API. Hit Generate plan to run it live.");
+        if (seedComposer) {
+          document.getElementById("result").scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }
+
       function bootDemo() {
         const mode = new URLSearchParams(location.search).get("demo");
         if (!mode) return false;
@@ -1792,8 +2296,10 @@
           if (cfgRes.ok) {
             cfg = await cfgRes.json();
             const dailyBudget = Number(cfg.daily_budget_usd || 0);
-            const budgetText = Number.isFinite(dailyBudget) ? `${dailyBudget.toFixed(2)}/day cap` : "runtime cap";
-            runtimeConfigEl.textContent = `model ${shortModel(cfg.model)} · ${budgetText} · cap ${cfg.hard_cap_enabled ? "on" : "off"}`;
+            const budgetText = Number.isFinite(dailyBudget) ? `$${dailyBudget.toFixed(2)}/day cap` : "runtime cap";
+            runtimeConfigEl.textContent = cfg.hard_cap_enabled
+              ? `model ${shortModel(cfg.model)} · ${budgetText}`
+              : `model ${shortModel(cfg.model)} · cap off`;
           } else {
             runtimeConfigEl.textContent = "runtime config unavailable";
           }

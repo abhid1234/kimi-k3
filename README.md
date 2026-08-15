@@ -61,6 +61,78 @@ shape). New screenshots:
 | `08-compare-risk-profiles.png` | Compare mode with per-variant mini risk profiles |
 | `09-mobile-risk-elevation.png` | Mobile layout (390px) with the strip |
 
+### Launch polish pass — premium hero + Action Plan Pack (2026-08-15)
+
+Frontend-only pass. **No backend contract, DB schema, or planner logic changed** —
+`/api/plan` accepts and returns exactly the same shapes.
+
+**What changed**
+
+1. **Hero rebuilt.** The old hero centred the wordmark, health chip and runtime
+   config in one floating cluster above a 56px gap, which read as stretched and
+   flat across wide viewports. It is now a proper top bar (wordmark hard left,
+   live status hard right) over a tightened centre stack: kicker → headline →
+   value proposition → CTA pair → proof chips. Bigger, tighter display type
+   (0.9 line-height), a deeper background with a masked engineering grid, and a
+   solid high-contrast primary CTA instead of the low-contrast translucent one.
+2. **New: Action Plan Pack.** A briefing card above every plan showing **plan
+   strength** (0–100 with an animated meter and strong/solid/thin grade),
+   **risk mix** (low/medium/high proportions across the steps), and **"do these
+   first"** — the top three moves as cards, plus one-click *Copy pack*. All of it
+   is derived client-side from the response `/api/plan` already returns; no new
+   endpoint, no extra call.
+3. **Plan strength scoring rewritten.** The previous formula
+   (`40 + steps * 12 + …`) saturated at five steps, so effectively every plan
+   scored 100/100 and compare mode produced tied winners. Scoring now weights
+   depth (20), section coverage (30), per-step specificity (15), risk literacy
+   (15) and stated confidence (20) to exactly 100, so scores actually spread.
+4. **New: "See a sample plan" CTA.** Renders bundled sample data through the real
+   render path with zero API calls and seeds the composer, so a cold visitor sees
+   a full plan instantly without spending budget.
+5. **Failure UX.** A failed run now keeps your request visible ("Your request is
+   saved" — goal, tone, whether constraints/context were kept) and **Retry this
+   request** re-sends the exact failed payload instead of rebuilding it from the
+   form.
+6. **Bug — hidden states leaked.** `.output-tools { display: flex }` overrode the
+   `hidden` attribute's `display: none`, so *Copy as Markdown / Copy share link /
+   View raw JSON* were visible on the empty, loading and error states — and after
+   a failure following a success they would copy the stale plan. `[hidden]` is now
+   enforced globally; `#runMeta` and `#compareResult` had the same exposure.
+7. **Bug — missing currency unit.** The runtime chip read `5.00/day cap`; now
+   `$5.00/day cap`, and the redundant trailing `· cap on` is dropped.
+8. **Bug — share mode lost on "First 3 actions."** `runActionFirst()` set
+   `shareMode = "action"` and then called `runSingle()`, which immediately reset it
+   to `"single"`, so those share links came back in the wrong mode. Mode is now
+   passed through explicitly.
+9. **Responsive.** Verified with no horizontal overflow at 390px and 360px; the
+   hero bar stacks, CTAs go full-width, and the pack collapses to one column.
+
+**What's new to test**
+
+| Check | How |
+|---|---|
+| Hero on desktop | Load `/` at ≥1200px — wordmark left, status right, no centred cluster |
+| Hero on mobile | Load `/` at 390px — stacked bar, full-width CTAs, no sideways scroll |
+| Action Plan Pack | Click **See a sample plan** — strength meter animates, risk mix + 3 move cards |
+| Copy pack | Click **Copy pack** in the pack — clipboard gets a plain-text briefing |
+| Score spread | Run **Compare 3 variants** — the three scores should differ, not all read 100 |
+| Failure UX | Kill network / hit the cap — error card keeps your goal and **Retry this request** re-sends it |
+| Hidden states | On a fresh load the copy/share/raw buttons must **not** be visible |
+| Budget guard | Unchanged — cap still returns 429 with the user-facing message |
+| Demo routes | `/?demo=plan` and `/?demo=compare` still render with zero API calls |
+| Share links | **Copy share link**, open it — composer rehydrates; `?auto=1` runs it |
+
+New screenshots:
+
+| | |
+|---|---|
+| `12-hero-premium-desktop.png` | Rebuilt hero (desktop) |
+| `13-action-plan-pack.png` | Plan output with the Action Plan Pack |
+| `14-hero-premium-mobile.png` | Rebuilt hero (390px) |
+
+Captured in a sandbox without webfont access, so the display face falls back to
+system sans; production loads Archivo.
+
 ## Run locally
 
 ```bash
@@ -177,6 +249,38 @@ Optional pre-flight before publish:
 ```bash
 scripts/smoke.sh  # validate against your current local BASE_URL first
 ```
+
+### Launch steps (quick)
+
+```bash
+cd "/Users/abhijitdas/Documents/Personal projects/kimi-k3"
+
+# 1. tests must be green (35 checks: schema, budget, storage, frontend contract)
+python3 -m pytest tests/ -q          # or: python3 -m unittest discover -s tests
+
+# 2. eyeball it locally, no API spend needed
+uvicorn app.main:app --reload
+#    open http://127.0.0.1:8000 and click "See a sample plan"
+
+# 3. ship
+vercel --prod
+
+# 4. verify the live deploy
+BASE_URL=https://kimi-k3-ashy.vercel.app scripts/smoke.sh
+```
+
+Step 4 should print `{"status":"ok"}` for health, a plan JSON body for both
+`/api/plan` calls, and the runtime config line. A `422` on `/api/plan` means the
+production alias is pointing at an older deploy — re-alias and re-run.
+
+**Demo links to have open when you launch:**
+
+- `https://kimi-k3-ashy.vercel.app/` — the hero
+- `https://kimi-k3-ashy.vercel.app/?demo=plan` — full plan + Action Plan Pack, zero API spend
+- `https://kimi-k3-ashy.vercel.app/?demo=compare` — three strategies side by side, zero API spend
+
+The `?demo=` links never call the model, so they cannot be broken by the daily
+budget cap or an upstream outage mid-demo.
 
 ### Tomorrow launch checklist (minimum)
 
