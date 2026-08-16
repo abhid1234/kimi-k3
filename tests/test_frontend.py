@@ -65,6 +65,61 @@ class FrontendContractTests(unittest.TestCase):
         self.assertIn('fetch("/api/config"', self.html)
         self.assertIn("runtimeConfigEl", self.html)
 
+    def test_hero_structure(self) -> None:
+        # hero is a bar (wordmark left / status right) plus a centred stack —
+        # not the old single centred cluster
+        self.assertIn('class="hero-bar"', self.html)
+        self.assertIn('class="hero-status"', self.html)
+        self.assertIn('class="hero-kicker"', self.html)
+        self.assertIn('class="hero-actions"', self.html)
+        for element_id in ("heroCta", "heroSample"):
+            self.assertIn(f'id="{element_id}"', self.html, f"missing #{element_id}")
+        # secondary CTA renders the bundled sample with no API call
+        self.assertIn("function showSamplePlan", self.html)
+
+    def test_action_plan_pack(self) -> None:
+        self.assertIn("function renderPack", self.html)
+        self.assertIn("function packGrade", self.html)
+        self.assertIn("function riskMix", self.html)
+        self.assertIn("function firstMoves", self.html)
+        self.assertIn("function copyPackSummary", self.html)
+        self.assertIn('id="copyPack"', self.html)
+        for cls in (".pack-meter", ".pack-grade", ".mix", ".moves", ".facet"):
+            self.assertIn(cls, self.html, f"missing pack style {cls}")
+        for grade in ("g-strong", "g-solid", "g-thin"):
+            self.assertIn(grade, self.html, f"missing grade class {grade}")
+        for sev in ("m-low", "m-medium", "m-high"):
+            self.assertIn(sev, self.html, f"missing risk-mix class {sev}")
+
+    def test_plan_strength_score_is_not_saturated(self) -> None:
+        """The score must discriminate — a flat 100 makes the meter meaningless."""
+        self.assertIn("function computeScore", self.html)
+        # the saturating formula (40 + steps * 12) must be gone
+        self.assertNotIn("40 + steps * 12", self.html)
+        for part in ("depth", "coverage", "specificity", "literacy", "confBonus"):
+            self.assertIn(part, self.html, f"missing score component: {part}")
+
+    def test_error_state_preserves_request(self) -> None:
+        # a failed run keeps the user's input visible and retries it verbatim
+        self.assertIn("error-kept", self.html)
+        self.assertIn("kept-goal", self.html)
+        self.assertIn('id="retryRun"', self.html)
+        self.assertIn("function retryLast", self.html)
+        self.assertIn("lastFailure", self.html)
+        # retry must not simply re-click the primary button
+        self.assertNotIn("document.getElementById('run').click()", self.html)
+
+    def test_hidden_attribute_is_enforced(self) -> None:
+        """`display` rules must not defeat [hidden] — it leaked the copy/share
+        tools onto the empty, loading and error states."""
+        self.assertRegex(self.html, re.compile(r"\[hidden\]\s*\{\s*display:\s*none\s*!important"))
+
+    def test_budget_guard_surface_intact(self) -> None:
+        # budget copy stays user-facing and the cap is shown with a currency unit
+        self.assertIn("is-budget", self.html)
+        self.assertIn("Daily budget reached", self.html)
+        self.assertIn("/day cap", self.html)
+
     def test_share_mode_is_stateful(self) -> None:
         self.assertIn("function copySharePlanLink()", self.html)
         self.assertIn("mode: shareMode", self.html)

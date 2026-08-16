@@ -28,7 +28,7 @@ class AppConfig(BaseModel):
     hard_cap_enabled: bool
     runtime_version: str
 
-app = FastAPI(title="Kimi K3 Planner")
+app = FastAPI(title="K3 Planner")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
