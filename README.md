@@ -1,5 +1,8 @@
 # K3 Planner
 
+[![tests](https://github.com/abhid1234/kimi-k3/actions/workflows/tests.yml/badge.svg)](https://github.com/abhid1234/kimi-k3/actions/workflows/tests.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 K3 Planner is a lightweight planning service that turns a goal into an ordered,
 actionable plan, with a simple FastAPI UI and persistent run history in SQLite.
 
@@ -219,7 +222,7 @@ This project can be deployed on Vercel using the project-level `vercel.json` ent
    ```
 2. From `kimi-k3` root, push once (it will auto-detect the serverless entry in `api/index.py`):
    ```bash
-   cd /Users/abhijitdas/Documents/Personal\ projects/kimi-k3
+   cd kimi-k3
    vercel
    ```
 3. Set environment variables in Vercel (Project Settings → Environment Variables):
@@ -243,7 +246,7 @@ This project can be deployed on Vercel using the project-level `vercel.json` ent
 ### One-click style publish cheatsheet
 
 ```bash
-cd "/Users/abhijitdas/Documents/Personal projects/kimi-k3"
+cd kimi-k3
 vercel --prod
 ```
 
@@ -256,7 +259,7 @@ scripts/smoke.sh  # validate against your current local BASE_URL first
 ### Launch steps (quick)
 
 ```bash
-cd "/Users/abhijitdas/Documents/Personal projects/kimi-k3"
+cd kimi-k3
 
 # 1. tests must be green (35 checks: schema, budget, storage, frontend contract)
 python3 -m pytest tests/ -q          # or: python3 -m unittest discover -s tests
