@@ -13,3 +13,6 @@ data/*.sqlite3
 .pytest_cache/
 .vercel
 .gstack/
+
+# launch strategy notes — kept out of the public repo
+launch/

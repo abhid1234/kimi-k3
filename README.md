@@ -287,12 +287,8 @@ budget cap or an upstream outage mid-demo.
 
 ### Tomorrow launch checklist (minimum)
 
-Launch artifacts live in [`launch/`](launch/):
-- `launch/LAUNCH_CHECKLIST.md`
-- `launch/FACTS.md`
-- `launch/X_TWEET.md`
-- `launch/SUBSTACK_DRAFT.md`
-- `launch/README.md`
+Launch artifacts (checklist, facts sheet, runbook, post drafts) are kept outside
+this repo.
 
 - [ ] Deploy target is set (Railway/Render/Fly/Vercel-compatible platform).
 - [ ] Set env var: `FIREWORKS_API_KEY`.
