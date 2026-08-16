@@ -16,7 +16,7 @@ Capture at 1440×900, 2x. Hide bookmarks bar and any personal tabs before record
 
 | Time | Shot | Voiceover |
 |---|---|---|
-| 0:00–0:05 | Hero, static. Cursor still. | "Kimi K3 turns one sentence into a plan you can actually run." |
+| 0:00–0:05 | Hero, static. Cursor still. | "K3 Planner turns one sentence into a plan you can actually run." |
 | 0:05–0:12 | Type a real goal into the composer. Don't paste — typing reads as real. | "You give it a goal and your constraints." |
 | 0:12–0:18 | Click Generate. Skeleton loader resolves into the plan. | "It comes back ordered, with the reasoning attached to every step." |
 | 0:18–0:30 | Slow scroll to the Action Plan Pack. Pause on the strength meter, then the risk mix. | "Every plan gets scored — depth, coverage, specificity, and how seriously it treated risk. This one's a 93, not a 100. The score is allowed to disagree with you." |
@@ -46,12 +46,15 @@ Loop cleanly: end frame ≈ start frame, so cut back to the hero on the last bea
 
 ---
 
-## If you'd rather not record
+## Decided: launching without this
 
-`docs/screenshots/12-hero-premium-desktop.png`, `13-action-plan-pack.png` and
-`14-hero-premium-mobile.png` carry the launch on their own. A 3-image post with the
-score-bug story as the copy works without any video at all — the hook is the writing,
-not the motion.
+**No video for launch day.** The three screenshots
+(`docs/screenshots/12-hero-premium-desktop.png`, `13-action-plan-pack.png`,
+`14-hero-premium-mobile.png`) carry it on their own, and the hook is the writing, not the
+motion — a thread built on the score-bug story doesn't need footage to land.
+
+This script stays in the kit for a post-launch cut. If the thread performs, a 20-second
+loop is the cheapest way to extend it into week two.
 
 ---
 

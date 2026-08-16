@@ -4,7 +4,7 @@
 
 ---
 
-I built **Kimi K3 Planner** over a few weekends. You give it a goal — "launch a paid AI side project to 100 users in 30 days" — and it returns an ordered plan: steps, why each one matters, a risk rating on every step, the assumptions it made, and your first three moves.
+I built **K3 Planner** over a few weekends. You give it a goal — "launch a paid AI side project to 100 users in 30 days" — and it returns an ordered plan: steps, why each one matters, a risk rating on every step, the assumptions it made, and your first three moves.
 
 Standard stuff. The part worth writing about is what I found while polishing it for launch.
 

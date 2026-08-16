@@ -1,4 +1,4 @@
-# Kimi K3 — Launch Checklist (v2)
+# K3 Planner — Launch Checklist (v3)
 
 Updated 2026-08-16 after the launch polish pass. Operational sequence lives in
 `LAUNCH_DAY_RUNBOOK.md`; this is the state view.
@@ -24,17 +24,20 @@ Updated 2026-08-16 after the launch polish pass. Operational sequence lives in
 - [ ] Confirm the daily budget gate returns 429 on the deployed build
 - [ ] Confirm tone alias compatibility (`tone=confident` → `clear`)
 - [ ] Merge PR `#1` and re-run smoke **after** the redeploy
-- [ ] **Decide: make the repo public, or strip repo links from all launch copy**
+- [ ] **Flip the repo to public** — Settings → General → Danger Zone → Change visibility.
+      No API for this; it has to be you. Secret scan is already clean.
 - [ ] Final social copy approved (blog + X + LinkedIn)
 
-## Decisions needed from Abhi
-- [ ] **Repo visibility.** Currently private. Public-repo links in copy will 404.
-- [ ] **The name.** "Kimi K3" runs `gpt-oss-120b`, not Moonshot's Kimi K3. Ship as-is with
-      the plain answer ready, or rename before launch. Renaming means the URL too.
-- [ ] **Cap headroom.** $5/day ≈ 250 runs. Raise it before posting if you expect the
-      thread to land, not after it trips.
-- [ ] **Video.** Script is ready in `VIDEO_SCRIPT.md`. No video file has reached this
-      session — record it, or run the launch on the three screenshots.
+## Decisions — all four closed 2026-08-16
+- [x] **The name → K3 Planner.** "Kimi" dropped from every shipped surface. Repo path and
+      deploy URL keep the `kimi-k3` slug (zero launch risk). Full rename rejected: the
+      namespace is crowded and a URL swap hours before launch isn't worth it.
+- [x] **Repo → public.** Full-history secret scan clean across 26 commits. One manual step
+      left for Abhi (below) — there's no API for visibility changes.
+- [x] **Budget → unchanged.** 5 days × $5/day = $25 total exposure. Cap is *not* being
+      raised. When a day trips, the demo routes absorb the traffic; that's the design.
+- [x] **Video → skip.** Launching on the three screenshots. `VIDEO_SCRIPT.md` stays in the
+      kit for a post-launch cut if the thread earns one.
 
 ## Known gaps, accepted for v1
 - Run history is ephemeral in production (SQLite on `/tmp`, lost on cold start)

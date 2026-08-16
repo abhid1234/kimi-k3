@@ -1,4 +1,4 @@
-# Kimi K3 Launch Kit
+# K3 Planner — Launch Kit
 
 Everything needed to launch. Read in this order.
 
@@ -20,10 +20,13 @@ claim about AI products shipping confidence theater.
 
 The tool is the evidence. Lead with the bug.
 
-## Open decisions
+## Decisions — all closed
 
-Four things need Abhi before this ships — repo visibility, the name, cap headroom, and
-whether there's a video. All four are listed in `LAUNCH_CHECKLIST.md`.
+Name is **K3 Planner** (repo/URL keep the `kimi-k3` slug). Repo goes **public**. Budget
+stays **$5/day across 5 days**, $25 total. **No video** — launching on the screenshots.
+Rationale for each is in `LAUNCH_CHECKLIST.md`.
+
+One manual action remains for Abhi: flipping the repo to public. There's no API for it.
 
 ## Voice
 

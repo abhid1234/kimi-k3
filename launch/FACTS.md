@@ -1,11 +1,11 @@
-# Kimi K3 Project Facts (evidence-backed)
+# K3 Planner — Project Facts (evidence-backed)
 
 Every claim here is checkable against the code or a test. **Nothing in the launch copy
 should assert anything that isn't on this page.** Updated 2026-08-16 after the launch
 polish pass.
 
 ## Product
-- Name: Kimi K3 Planner
+- Name: **K3 Planner** (renamed 2026-08-16 — "Kimi" dropped, see below)
 - Problem: turn a goal into a structured, risk-aware execution plan in one shot
 - Target user: founders, operators, solo builders who want fast, ordered action plans
 - Core UX: goal/constraints/context composer → Action Plan Pack → risk-elevation strip →
@@ -17,9 +17,18 @@ polish pass.
 - Model: **`gpt-oss-120b`, hosted on Fireworks** (`FIREWORKS_MODEL`, configurable)
 - Persistence: SQLite (`data/runs.db` by default, `/tmp/kimi-k3-runs.db` on Vercel)
 
-> ⚠️ **Naming, stated plainly.** The project is called Kimi K3; it does **not** run
-> Moonshot's Kimi K3 model. If asked, the answer is "it's a harness, not a model — it runs
-> gpt-oss-120b on Fireworks." Do not let launch copy imply otherwise.
+> **Naming — decided 2026-08-16.** The product is **K3 Planner**. "Kimi" was dropped from
+> every shipped surface (page title, wordmark, footer, FastAPI title, README) because the
+> tool does not run Moonshot's Kimi K3 model and shouldn't imply it does.
+>
+> A full rename was considered and rejected: the trail-metaphor namespace is crowded
+> (five separate AI products ship as "Cairn"), and swapping the deploy URL hours before
+> launch buys a fresh collision risk to fix a problem that a one-word cut already fixes.
+>
+> **The repo path and deploy URL keep the `kimi-k3` slug.** That's deliberate — zero
+> launch risk. Product names differing from URLs is ordinary. If asked: "K3 is a project
+> codename; it runs gpt-oss-120b on Fireworks. The old slug is just the repo path."
+> Re-brand properly after launch if it earns it.
 
 ## Verified behavior
 - `GET /api/health` returns `{ "status": "ok" }`
@@ -37,6 +46,8 @@ polish pass.
 ## Numbers safe to quote
 - **35** automated tests pass (`pytest tests/ -q`)
 - Daily cap: **$5.00**, at an estimated **$0.02** per run (~250 runs/day)
+- Launch window: **5 days at $5/day**, so **$25 total exposure**. The cap is not being
+  raised for launch — when a day's cap trips, the demo routes carry the traffic
 - Compare mode generates **3** strategies: *current constraints*, *speed-first*,
   *risk-minimized* — **not** "clear vs concise vs executive", which is the tone control
 - Plan strength scores out of **100**, across five weighted components: depth 20,
@@ -65,9 +76,10 @@ The pre-launch pass found four real bugs, all in the surfaces around the model:
 - Model alias names can change upstream; default stays configurable via `FIREWORKS_MODEL`
 - SQLite on Vercel lives at `/tmp`, which is ephemeral — **run history does not survive a
   cold start in production.** Don't claim durable history in launch copy
-- The repo is currently **private**; any public repo link in launch copy will 404 until
-  that changes
 - No CI is configured in this repo — there are no automated checks on push
+- Repo is being made **public** for launch. Full-history secret scan run 2026-08-16 across
+  all 26 commits: no API keys, tokens or credentials, and only `.env.example` was ever
+  committed. Safe to publish
 
 ## Not verified
 - The live smoke script has not been run against `https://kimi-k3-ashy.vercel.app` by

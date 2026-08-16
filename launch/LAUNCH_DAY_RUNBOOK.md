@@ -50,25 +50,33 @@ Post the blog before the socials. If the thread lands and the post isn't up, the
 
 ---
 
-## Decide before you post
+## Settled — no decisions left, just one action
 
-**The repo is currently private.** `LAUNCH_CHECKLIST.md` assumes "public repo exists" as
-the target state. Either flip it to public before launch or cut every repo reference from
-the copy — a dead GitHub link in a launch thread is worse than no link.
+**Name is K3 Planner.** "Kimi" is out of every shipped surface. The repo path and URL keep
+the `kimi-k3` slug on purpose — changing a working deploy URL hours before launch isn't
+worth it. If anyone asks: *"K3 is a project codename; it runs gpt-oss-120b on Fireworks.
+The old slug is just the repo path."*
 
-**The name.** The project is "Kimi K3"; it runs `gpt-oss-120b` on Fireworks. Kimi K3 is
-also a real Moonshot model. Somebody will ask. Have the answer ready and don't get
-defensive about it — `X_TWEET.md` has the one-liner.
+**Repo → public: this one is on you.** Settings → General → Danger Zone → Change
+visibility. There's no API for it. A full-history secret scan came back clean (26 commits,
+no keys or tokens, only `.env.example` ever committed), so it's safe to publish — but do it
+**before** you post, or every repo link in the copy 404s.
+
+**Budget stays at $5/day for 5 days.** $25 total exposure, not being raised.
 
 ---
 
 ## During the launch
 
-- **Watch the cap.** $5/day at ~$0.02 a run is roughly 250 generations. A thread that
-  lands can burn that in an afternoon. If you want headroom, raise
-  `KIMI_DAILY_BUDGET_USD` *before* posting, not after it trips.
-- **If the cap trips mid-day:** it fails clean — 429 with a plain message, not a crash.
-  Point people at `?demo=plan`, which never calls the API. That's exactly what it's for.
+- **The cap will probably trip on day one, and that's fine.** $5/day at ~$0.02 a run is
+  roughly 250 generations. A thread that lands burns that in an afternoon. You've chosen
+  not to raise it — so treat the trip as expected, not as an incident.
+- **When it trips:** it fails clean — 429 with a plain message, not a crash. Pin a reply
+  with `?demo=plan`, which never calls the API and renders the identical UI. Resets at
+  **midnight UTC**, so day two opens with a fresh $5.
+- **Across 5 days that's $25 total.** If day one converts well and you want more live
+  runs on day two, raising `KIMI_DAILY_BUDGET_USD` is a one-line env change plus a
+  redeploy — decide it on the data, not in advance.
 - **If Fireworks goes down:** same move. The demo links keep working; the error state
   keeps people's input and offers a real retry.
 - **Reply to everything for the first two hours.** Early replies drive the thread more

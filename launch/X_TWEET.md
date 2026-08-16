@@ -90,8 +90,13 @@ Char counts are per-post and all land under 260.
   takeaway rather than a CTA. If reach matters more than form, move it to a reply on post 7.
 - **Don't lead with the product.** The score bug is the hook; the tool is the evidence.
   Leading with "I built a tool" buries it.
-- **If someone asks which model it runs:** `gpt-oss-120b` on Fireworks. Answer plainly —
-  the project name is not a claim about the model. See `FACTS.md`.
+- **If someone asks which model it runs:** `gpt-oss-120b` on Fireworks. Answer plainly.
+  The product is **K3 Planner** — "Kimi" is off every shipped surface. The URL still reads
+  `kimi-k3-ashy` because that's the repo slug and changing a working deploy URL on launch
+  day isn't worth it. One line, no defensiveness: *"K3 is a project codename; it runs
+  gpt-oss-120b. The slug is just the repo path."*
+- **When the daily cap trips** (likely on day one — $5/day is ~250 runs): reply with
+  `?demo=plan`. Identical UI, no API call. Resets midnight UTC.
 - **Reply-bait to have ready:** people will ask how risk severity is decided. Answer: the
   model assigns it per step; the frontend normalizes anything off-enum to low/medium/high,
   and uniform ratings cost you points in the score.

@@ -1,8 +1,11 @@
-# Kimi K3 Planner
+# K3 Planner
 
-Kimi K3 is a lightweight planning service that turns a goal into an ordered,
-actionable plan using the Fireworks API, with a simple FastAPI UI and persistent
-run history in SQLite.
+K3 Planner is a lightweight planning service that turns a goal into an ordered,
+actionable plan, with a simple FastAPI UI and persistent run history in SQLite.
+
+It runs **`gpt-oss-120b` hosted on Fireworks** (configurable via `FIREWORKS_MODEL`).
+The name is a project codename — it is not Moonshot's Kimi K3 model and makes no
+claim to be. The repo path and deploy URL keep the older `kimi-k3` slug.
 
 ## UI
 
