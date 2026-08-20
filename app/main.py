@@ -53,7 +53,7 @@ def health() -> dict[str, str]:
 def _get_runtime_config() -> dict[str, float | str | bool]:
     daily_budget_usd = float(os.environ.get("KIMI_DAILY_BUDGET_USD", "5.0"))
     estimated_cost_usd = float(os.environ.get("KIMI_ESTIMATED_COST_USD", "0.02"))
-    model = os.environ.get("FIREWORKS_MODEL", "accounts/fireworks/models/gpt-oss-120b").strip() or "accounts/fireworks/models/gpt-oss-120b"
+    model = os.environ.get("FIREWORKS_MODEL", "accounts/fireworks/models/kimi-k3").strip() or "accounts/fireworks/models/kimi-k3"
     return {
         "model": model,
         "daily_budget_usd": daily_budget_usd,

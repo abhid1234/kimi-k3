@@ -1128,6 +1128,25 @@
 
       /* ---------- Risk elevation strip (signature) ---------- */
       .strip { margin: 2px 0 24px; }
+      .strip-title {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 0 0 6px;
+        font: 600 10.5px/1.4 var(--mono);
+        text-transform: uppercase;
+        letter-spacing: 0.13em;
+        color: var(--ink-faint);
+      }
+      .strip-title b { color: var(--ink-soft); font-weight: 600; }
+      .strip-note {
+        margin: 6px 0 0;
+        font-size: 0.82rem;
+        line-height: 1.5;
+        color: var(--ink-faint);
+      }
+      .strip-note b { color: var(--ink-soft); font-weight: 600; }
       .strip svg { display: block; width: 100%; height: auto; overflow: visible; }
       .strip .grid-line { stroke: var(--line-soft); stroke-width: 1; }
       .strip .grid-label {
@@ -1391,7 +1410,7 @@
 
       <footer class="foot">
         <span>K3 PLANNER · plans are model output — sanity-check before you execute</span>
-        <span><a href="/openapi">API docs</a> · runs on <code>gpt-oss-120b</code> via Fireworks</span>
+        <span><a href="/openapi">API docs</a> · Kimi K3, served on Fireworks</span>
       </footer>
     </main>
 
@@ -1947,10 +1966,19 @@
         const summary = ["low", "medium", "high"].filter((r) => counts[r]).map((r) => `${counts[r]} ${r}`).join(", ");
         const label = `Risk elevation across ${n} steps (${summary}). Peaks are higher-risk steps.`;
 
-        return `<figure class="strip">` +
+        // Spell out what the axis means — "high / med / low" alone told the reader nothing.
+        const head = mini ? "" :
+          `<figcaption class="strip-title">Risk by step <b>&middot; height = how risky that step is</b></figcaption>`;
+        const note = mini ? "" :
+          `<p class="strip-note">Every step is rated <b>low</b>, <b>medium</b> or <b>high</b> risk. ` +
+          `The line climbs where the plan gets dangerous, so the peaks are the steps most likely ` +
+          `to go wrong. This plan: ${escapeHtml(summary)}.</p>`;
+
+        return `<figure class="strip">` + head +
           `<svg viewBox="0 0 ${W} ${H}" role="group" aria-label="${encodeAttr(label)}">` +
           grid + shade + `<path class="trail" d="${d}" pathLength="1" />` + dots + flag +
-          `</svg><figcaption class="visually-hidden">${escapeHtml(label)}</figcaption></figure>`;
+          `</svg>` + note +
+          `<figcaption class="visually-hidden">${escapeHtml(label)}</figcaption></figure>`;
       }
 
       function activatePlanView(root) {

@@ -290,7 +290,7 @@ async def generate_plan(
     if not api_key:
         raise RuntimeError("FIREWORKS_API_KEY is not configured")
 
-    model = os.environ.get("FIREWORKS_MODEL", "accounts/fireworks/models/gpt-oss-120b").strip()
+    model = os.environ.get("FIREWORKS_MODEL", "accounts/fireworks/models/kimi-k3").strip()
     temperature = float(os.environ.get("FIREWORKS_TEMPERATURE", "0.2"))
     max_tokens = int(os.environ.get("FIREWORKS_MAX_TOKENS", "1800"))
 

@@ -23,7 +23,7 @@ class ConfigEndpointTests(unittest.TestCase):
         response = self.client.get("/api/config")
         self.assertEqual(response.status_code, 200)
         data = response.json()
-        self.assertEqual(data["model"], "accounts/fireworks/models/gpt-oss-120b")
+        self.assertEqual(data["model"], "accounts/fireworks/models/kimi-k3")
         self.assertGreater(data["daily_budget_usd"], 0)
         self.assertIn("runtime_version", data)
 

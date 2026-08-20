@@ -6,9 +6,9 @@
 K3 Planner is a lightweight planning service that turns a goal into an ordered,
 actionable plan, with a simple FastAPI UI and persistent run history in SQLite.
 
-It runs **`gpt-oss-120b` hosted on Fireworks** (configurable via `FIREWORKS_MODEL`).
-The name is a project codename — it is not Moonshot's Kimi K3 model and makes no
-claim to be. The repo path and deploy URL keep the older `kimi-k3` slug.
+It runs **Kimi K3, served on Fireworks** (configurable via `FIREWORKS_MODEL`,
+default `accounts/fireworks/models/kimi-k3`). Fireworks was Moonshot's launch
+partner for K3 and serves it on their serverless tiers.
 
 ## UI
 
@@ -227,7 +227,7 @@ This project can be deployed on Vercel using the project-level `vercel.json` ent
    ```
 3. Set environment variables in Vercel (Project Settings → Environment Variables):
    - `FIREWORKS_API_KEY` (required)
-   - `FIREWORKS_MODEL` (default is `accounts/fireworks/models/gpt-oss-120b`)
+   - `FIREWORKS_MODEL` (default is `accounts/fireworks/models/kimi-k3`)
    - `FIREWORKS_TEMPERATURE` (optional)
    - `FIREWORKS_MAX_TOKENS` (optional)
    - `KIMI_DAILY_BUDGET_USD` (default `5`)
