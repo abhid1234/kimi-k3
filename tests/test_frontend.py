@@ -114,6 +114,18 @@ class FrontendContractTests(unittest.TestCase):
         tools onto the empty, loading and error states."""
         self.assertRegex(self.html, re.compile(r"\[hidden\]\s*\{\s*display:\s*none\s*!important"))
 
+    def test_risk_axis_is_explained(self) -> None:
+        """"high / med / low" on the axis meant nothing on its own — the chart
+        has to say what it is measuring."""
+        self.assertIn("strip-title", self.html)
+        self.assertIn("strip-note", self.html)
+        self.assertIn("height = how risky that step is", self.html)
+        for sev in ("low", "medium", "high"):
+            self.assertIn(f"<b>{sev}</b>", self.html, f"missing {sev} in the axis note")
+
+    def test_model_is_named_in_the_ui(self) -> None:
+        self.assertIn("Kimi K3, served on Fireworks", self.html)
+
     def test_budget_guard_surface_intact(self) -> None:
         # budget copy stays user-facing and the cap is shown with a currency unit
         self.assertIn("is-budget", self.html)
