@@ -17,10 +17,11 @@ and a demo mode that never touches the API.
 
 ## Watch it run
 
-<video src="https://github.com/abhid1234/kimi-k3/raw/main/docs/video/k3-planner-walkthrough.mp4" poster="https://raw.githubusercontent.com/abhid1234/kimi-k3/main/docs/video/poster.png" controls muted playsinline width="100%"><a href="https://github.com/abhid1234/kimi-k3/raw/main/docs/video/k3-planner-walkthrough.mp4"><img src="https://raw.githubusercontent.com/abhid1234/kimi-k3/main/docs/video/poster.png" alt="K3 Planner — 90-second walkthrough" width="100%"></a></video>
+[![K3 Planner — 90-second walkthrough](docs/video/poster.png)](https://github.com/abhid1234/kimi-k3/blob/main/docs/video/k3-planner-walkthrough.mp4)
 
 90 seconds, no narration: a goal typed in, the plan coming back, what the score is
 actually measuring, the risk chart, and compare mode running three strategies at once.
+[Play it on GitHub →](https://github.com/abhid1234/kimi-k3/blob/main/docs/video/k3-planner-walkthrough.mp4) · [download the MP4](https://github.com/abhid1234/kimi-k3/raw/main/docs/video/k3-planner-walkthrough.mp4) (4.7 MB)
 
 ---
 
