@@ -135,9 +135,27 @@ New screenshots:
 | `12-hero-premium-desktop.png` | Rebuilt hero (desktop) |
 | `13-action-plan-pack.png` | Plan output with the Action Plan Pack |
 | `14-hero-premium-mobile.png` | Rebuilt hero (390px) |
+| `15-risk-axis-explained.png` | The risk chart with its axis explained |
 
 Captured in a sandbox without webfont access, so the display face falls back to
 system sans; production loads Archivo.
+
+### Kimi K3 + explained risk axis (2026-08-20)
+
+Two launch-driven changes:
+
+1. **The model is Kimi K3.** The default was `gpt-oss-120b`, which made the
+   project name a coincidence. It is now `accounts/fireworks/models/kimi-k3` —
+   Fireworks were Moonshot's launch partner for K3 and serve it on their
+   standard serverless tiers. Override with `FIREWORKS_MODEL`.
+2. **The risk axis explains itself.** The elevation strip labelled its gridlines
+   `high / med / low` and never said what was being measured. It now carries a
+   title ("Risk by step · height = how risky that step is") and a note spelling
+   out that every step is rated low/medium/high, that the line climbs where the
+   plan gets dangerous, and what this plan's mix is. Compare mode keeps the bare
+   mini strips.
+
+Screenshots `12`–`15` reflect this state.
 
 ## Run locally
 
