@@ -3,329 +3,167 @@
 [![tests](https://github.com/abhid1234/kimi-k3/actions/workflows/tests.yml/badge.svg)](https://github.com/abhid1234/kimi-k3/actions/workflows/tests.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-K3 Planner is a lightweight planning service that turns a goal into an ordered,
-actionable plan, with a simple FastAPI UI and persistent run history in SQLite.
+**A playground for [Kimi K3](https://fireworks.ai/models/fireworks/kimi-k3), running on
+[Fireworks](https://fireworks.ai).** I wanted to actually use K3 rather than benchmark it,
+and ended up building this. Give it a goal; it returns an ordered plan with a risk rating
+on every step, the assumptions it made, and your first three moves.
 
-It runs **Kimi K3, served on Fireworks** (configurable via `FIREWORKS_MODEL`,
-default `accounts/fireworks/models/kimi-k3`). Fireworks was Moonshot's launch
-partner for K3 and serves it on their serverless tiers.
+**→ [kimi-k3-ashy.vercel.app](https://kimi-k3-ashy.vercel.app)** · no signup, free,
+and a demo mode that never touches the API.
 
-## UI
+![K3 Planner](docs/screenshots/12-hero-premium-desktop.png)
 
-The playground UI (`static/index.html`, no build step) is a single-page composer +
-output workspace: goal/constraints/context/tone composer with sample prompts,
-a risk-annotated route-rail plan view, 3-variant compare mode, run history with
-one-click reuse, and explicit loading/empty/error/budget states. Screenshots in
-[`docs/screenshots/`](docs/screenshots/):
+---
 
-| | |
+## The bug worth knowing about
+
+I built a "plan strength" score, 0–100, with a meter under it. The formula was:
+
+```
+40 + (steps × 12) + 10 if assumptions + 10 if risks + 10 if next actions
+```
+
+Five steps gets you to 100. Every plan has five or more steps. So **every plan scored
+100/100** — and compare mode, which ranks three strategies by that same score, produced
+three-way ties where "highest score" landed on whichever request returned first.
+
+A metric that always returns the same number isn't a weak metric. It's decoration.
+
+![The score, before and after](docs/blog/score-breakdown.png)
+
+It now spreads across five weighted components summing to exactly 100. The one worth
+defending is **risk literacy**: if a model rates all six steps "low", it didn't assess
+risk — it filled a required field. Uniform ratings get penalised.
+
+The same sample plan now scores **93**, not 100. It can disagree with you, which is the
+only reason to show it.
+
+[Full write-up →](https://kimi-k3-ashy.vercel.app) *(blog link goes here once published)*
+
+## What "high / medium / low" means
+
+![The risk axis, explained](docs/blog/risk-terrain-explained.png)
+
+Kimi K3 rates every step for risk — how likely it is to go wrong, and how much it hurts
+if it does:
+
+- **Low** — routine. If it fails you lose an afternoon.
+- **Medium** — real uncertainty. Depends on something you don't fully control.
+- **High** — where the plan actually breaks. The step everything downstream waits on.
+
+The chart plots those as terrain: **x is step order, y is severity**. The line climbs
+where the plan gets dangerous, so the peaks are the steps most likely to sink you.
+
+## What it does
+
+![Action Plan Pack](docs/screenshots/13-action-plan-pack.png)
+
+- **Action Plan Pack** — strength score, risk mix across steps, and the first three
+  moves as cards. One click copies the lot as a briefing.
+- **Risk terrain** — hover a peak, the matching step highlights.
+- **Compare three strategies** — same goal through *current constraints*, *speed-first*
+  and *risk-minimized*, as three visibly different risk profiles.
+- **Hard budget cap** — `$5/day` by default. On the cap, `/api/plan` returns a 429 with
+  a plain message rather than a stack trace.
+- **Demo mode** — `?demo=plan` and `?demo=compare` render bundled sample data through
+  the real render path with zero API calls.
+- **Share links** — *Copy share link* encodes the composer state; `?auto=1` runs it.
+
+## Built with
+
+![Request path](docs/blog/stack.png)
+
+| Layer | Tool |
 |---|---|
-| `01-hero-composer-empty.png` | Hero, composer, empty + history states (desktop) |
-| `02-error-state.png` | Upstream-error state with retry |
-| `03-loading-skeleton.png` | Skeleton loading state |
-| `04-plan-output.png` | Full plan output (route rail, budget meter) |
-| `05-compare-variants.png` | 3-variant compare with winner highlight |
-| `06-mobile.png` | Mobile layout (390px) |
+| Model | **Kimi K3** — Moonshot's 2.8T open-weights model |
+| Inference | **Fireworks AI** serverless |
+| Backend | FastAPI, Pydantic for schema validation, httpx |
+| Serverless glue | Mangum (ASGI → Vercel Python runtime) |
+| Hosting | Vercel |
+| Frontend | one hand-written `static/index.html` — no framework, no build step |
+| Storage | SQLite run log |
+| Tests | 37, on GitHub Actions |
 
-`04`/`05` show representative plan data rendered through the real render path
-(captured while the Fireworks account was suspended, so no live generation).
-
-### Frontend revamp — risk elevation (2026-08-09)
-
-The plan visualization gained a signature element: a **risk-elevation strip**
-drawn above the step rail. The plan is rendered as terrain — x is step order,
-y is risk severity — so the route literally climbs into peaks where the plan
-gets dangerous, in the style of a reaction-coordinate energy diagram. Design
-decisions:
-
-- **One signature, everything else quiet.** The strip carries the excitement;
-  the step rail, aux sections, and composer keep their existing simplicity.
-- **Structure encodes information.** Peak height maps to the same low/medium/high
-  severities as the step badges; the shaded area under the trail and the
-  HIGH/MED/LOW gridlines make the shape readable at a glance.
-- **Two-way sync.** Hovering or keyboard-focusing a waypoint highlights its step
-  card (and vice versa); Enter/Space on a waypoint jumps to the step. Waypoints
-  are real focusable controls with per-step `aria-label`s, and the strip has a
-  text summary for assistive tech.
-- **Compare mode gets mini strips**, so three strategies read as three visibly
-  different risk terrains next to the winner highlight.
-- **Motion is an orchestrated moment, not ambience**: the trail draws in once
-  (~0.9s), waypoints pop staggered, step cards follow — all disabled under
-  `prefers-reduced-motion`.
-- **Demo mode for testability**: `/?demo=plan` and `/?demo=compare` render
-  bundled sample data through the real render path with zero API calls, clearly
-  labelled ("Sample data — nothing was sent to the API"). Used for screenshots
-  and demos when the upstream model account is unavailable.
-
-Frontend contract tests live in `tests/test_frontend.py` (controls, labels,
-a11y basics, risk badge coverage, strip presence, unchanged `/api/plan` payload
-shape). New screenshots:
-
-| | |
-|---|---|
-| `07-plan-risk-elevation.png` | Plan output with the risk-elevation strip (desktop) |
-| `08-compare-risk-profiles.png` | Compare mode with per-variant mini risk profiles |
-| `09-mobile-risk-elevation.png` | Mobile layout (390px) with the strip |
-
-### Launch polish pass — premium hero + Action Plan Pack (2026-08-15)
-
-Frontend-only pass. **No backend contract, DB schema, or planner logic changed** —
-`/api/plan` accepts and returns exactly the same shapes.
-
-**What changed**
-
-1. **Hero rebuilt.** The old hero centred the wordmark, health chip and runtime
-   config in one floating cluster above a 56px gap, which read as stretched and
-   flat across wide viewports. It is now a proper top bar (wordmark hard left,
-   live status hard right) over a tightened centre stack: kicker → headline →
-   value proposition → CTA pair → proof chips. Bigger, tighter display type
-   (0.9 line-height), a deeper background with a masked engineering grid, and a
-   solid high-contrast primary CTA instead of the low-contrast translucent one.
-2. **New: Action Plan Pack.** A briefing card above every plan showing **plan
-   strength** (0–100 with an animated meter and strong/solid/thin grade),
-   **risk mix** (low/medium/high proportions across the steps), and **"do these
-   first"** — the top three moves as cards, plus one-click *Copy pack*. All of it
-   is derived client-side from the response `/api/plan` already returns; no new
-   endpoint, no extra call.
-3. **Plan strength scoring rewritten.** The previous formula
-   (`40 + steps * 12 + …`) saturated at five steps, so effectively every plan
-   scored 100/100 and compare mode produced tied winners. Scoring now weights
-   depth (20), section coverage (30), per-step specificity (15), risk literacy
-   (15) and stated confidence (20) to exactly 100, so scores actually spread.
-4. **New: "See a sample plan" CTA.** Renders bundled sample data through the real
-   render path with zero API calls and seeds the composer, so a cold visitor sees
-   a full plan instantly without spending budget.
-5. **Failure UX.** A failed run now keeps your request visible ("Your request is
-   saved" — goal, tone, whether constraints/context were kept) and **Retry this
-   request** re-sends the exact failed payload instead of rebuilding it from the
-   form.
-6. **Bug — hidden states leaked.** `.output-tools { display: flex }` overrode the
-   `hidden` attribute's `display: none`, so *Copy as Markdown / Copy share link /
-   View raw JSON* were visible on the empty, loading and error states — and after
-   a failure following a success they would copy the stale plan. `[hidden]` is now
-   enforced globally; `#runMeta` and `#compareResult` had the same exposure.
-7. **Bug — missing currency unit.** The runtime chip read `5.00/day cap`; now
-   `$5.00/day cap`, and the redundant trailing `· cap on` is dropped.
-8. **Bug — share mode lost on "First 3 actions."** `runActionFirst()` set
-   `shareMode = "action"` and then called `runSingle()`, which immediately reset it
-   to `"single"`, so those share links came back in the wrong mode. Mode is now
-   passed through explicitly.
-9. **Responsive.** Verified with no horizontal overflow at 390px and 360px; the
-   hero bar stacks, CTAs go full-width, and the pack collapses to one column.
-
-**What's new to test**
-
-| Check | How |
-|---|---|
-| Hero on desktop | Load `/` at ≥1200px — wordmark left, status right, no centred cluster |
-| Hero on mobile | Load `/` at 390px — stacked bar, full-width CTAs, no sideways scroll |
-| Action Plan Pack | Click **See a sample plan** — strength meter animates, risk mix + 3 move cards |
-| Copy pack | Click **Copy pack** in the pack — clipboard gets a plain-text briefing |
-| Score spread | Run **Compare 3 variants** — the three scores should differ, not all read 100 |
-| Failure UX | Kill network / hit the cap — error card keeps your goal and **Retry this request** re-sends it |
-| Hidden states | On a fresh load the copy/share/raw buttons must **not** be visible |
-| Budget guard | Unchanged — cap still returns 429 with the user-facing message |
-| Demo routes | `/?demo=plan` and `/?demo=compare` still render with zero API calls |
-| Share links | **Copy share link**, open it — composer rehydrates; `?auto=1` runs it |
-
-New screenshots:
-
-| | |
-|---|---|
-| `12-hero-premium-desktop.png` | Rebuilt hero (desktop) |
-| `13-action-plan-pack.png` | Plan output with the Action Plan Pack |
-| `14-hero-premium-mobile.png` | Rebuilt hero (390px) |
-| `15-risk-axis-explained.png` | The risk chart with its axis explained |
-
-Captured in a sandbox without webfont access, so the display face falls back to
-system sans; production loads Archivo.
-
-### Kimi K3 + explained risk axis (2026-08-20)
-
-Two launch-driven changes:
-
-1. **The model is Kimi K3.** The default was `gpt-oss-120b`, which made the
-   project name a coincidence. It is now `accounts/fireworks/models/kimi-k3` —
-   Fireworks were Moonshot's launch partner for K3 and serve it on their
-   standard serverless tiers. Override with `FIREWORKS_MODEL`.
-2. **The risk axis explains itself.** The elevation strip labelled its gridlines
-   `high / med / low` and never said what was being measured. It now carries a
-   title ("Risk by step · height = how risky that step is") and a note spelling
-   out that every step is rated low/medium/high, that the line climbs where the
-   plan gets dangerous, and what this plan's mix is. Compare mode keeps the bare
-   mini strips.
-
-Screenshots `12`–`15` reflect this state.
+Two choices worth defending. The single HTML file means the risk chart is ~60 lines of
+SVG path maths rather than a charting dependency, and the whole UI ships as one request.
+And Pydantic is load-bearing: model output is sanitised and validated before it reaches
+the UI — off-enum risk values normalise to low/medium/high, malformed JSON hits a
+fallback parser. That's what makes it safe to render straight into a chart.
 
 ## Run locally
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env  # then set FIREWORKS_API_KEY
+cp .env.example .env          # then set FIREWORKS_API_KEY
 uvicorn app.main:app --reload
 ```
 
-Then open:
+Open `http://127.0.0.1:8000`. Click **See a sample plan** to exercise the UI without
+spending anything.
 
-- `http://127.0.0.1:8000` for the browser UI
-- `http://127.0.0.1:8000/openapi` for API docs
+```bash
+pytest tests/ -q                                    # 37 tests
+BASE_URL=http://127.0.0.1:8000 bash scripts/smoke.sh
+```
 
 ## Endpoints
 
-- `GET /` serves the UI.
-- `GET /api/health` returns `{ "status": "ok" }`.
-- `POST /api/plan` accepts goal/constraints/context/tone and returns the generated plan.
-- Budget controls: set `KIMI_DAILY_BUDGET_USD` and `KIMI_ESTIMATED_COST_USD` in env to cap usage per UTC day.
-- `GET /api/runs` returns recent saved runs.
+| | |
+|---|---|
+| `GET /` | serves the UI |
+| `GET /api/health` | `{"status": "ok"}` |
+| `GET /api/config` | model, daily budget, per-run estimate, cap state |
+| `POST /api/plan` | goal / constraints / context / tone → plan |
+| `GET /api/runs` | recent saved runs |
 
-## Data
+## Configuration
 
-Runs are stored in `data/runs.db` with schema:
-`goal`, `constraints`, `context`, `tone`, `status`, `model`, `latency_ms`,
-`response_json`, `raw_output`, `error`.
+| Variable | Default |
+|---|---|
+| `FIREWORKS_API_KEY` | **required** |
+| `FIREWORKS_MODEL` | `accounts/fireworks/models/kimi-k3` |
+| `FIREWORKS_TEMPERATURE` | `0.2` |
+| `FIREWORKS_MAX_TOKENS` | `1800` |
+| `KIMI_DAILY_BUDGET_USD` | `5` |
+| `KIMI_ESTIMATED_COST_USD` | `0.02` |
+| `KIMI_DB_PATH` | `data/runs.db` (`/tmp/kimi-k3-runs.db` on Vercel) |
 
-## Launch plan (recommended)
+Runs are stored with: `goal`, `constraints`, `context`, `tone`, `status`, `model`,
+`latency_ms`, `response_json`, `raw_output`, `error`.
 
-This service is designed to be launch-ready with:
+## Deploy
 
-1. Environment configured (`FIREWORKS_API_KEY` required in runtime).
-2. SQLite writeable data directory (`data/` auto-created).
-3. A single process command for local, Docker, or hosted deploys.
+**Vercel** — `vercel.json` routes everything to `api/index.py`, which wraps the FastAPI
+app with Mangum. Set the variables above in Project Settings → Environment Variables,
+then redeploy. Env var changes do not redeploy on their own.
 
-### Local run
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env  # set FIREWORKS_API_KEY
-uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
-```
-
-### Local smoke test (after install)
-
-```bash
-python3 -m unittest discover -s tests -v
-python3 - <<'PY'
-import urllib.request, json
-print(json.loads(urllib.request.urlopen('http://127.0.0.1:8000/api/health').read())["status"])
-PY
-```
-
-### Smoke checks (local or deployed)
-
-```bash
-BASE_URL=http://127.0.0.1:8000 scripts/smoke.sh
-# if testing prod:
-BASE_URL=https://kimi-k3-ashy.vercel.app scripts/smoke.sh
-```
-
-### Docker run
+**Docker**
 
 ```bash
 docker build -t kimi-k3 .
 docker run --rm -p 8000:8000 --env-file .env -v "$PWD/data:/app/data" kimi-k3
 ```
 
-### Vercel deploy (full playground)
-
-This project can be deployed on Vercel using the project-level `vercel.json` entry:
-
-1. Install and login to Vercel CLI on your machine:
-   ```bash
-   npm i -g vercel
-   vercel login
-   ```
-2. From `kimi-k3` root, push once (it will auto-detect the serverless entry in `api/index.py`):
-   ```bash
-   cd kimi-k3
-   vercel
-   ```
-3. Set environment variables in Vercel (Project Settings → Environment Variables):
-   - `FIREWORKS_API_KEY` (required)
-   - `FIREWORKS_MODEL` (default is `accounts/fireworks/models/kimi-k3`)
-   - `FIREWORKS_TEMPERATURE` (optional)
-   - `FIREWORKS_MAX_TOKENS` (optional)
-   - `KIMI_DAILY_BUDGET_USD` (default `5`)
-   - `KIMI_ESTIMATED_COST_USD` (default `0.02`)
-
-4. Redeploy after env changes:
-   ```bash
-   vercel --prod
-   ```
-
-5. Verify after deploy:
-   - `/api/health` returns `{ "status": "ok" }`
-   - open `/` and run one generation with an example
-   - verify budget cap behavior at /api/plan when exceeded
-
-### One-click style publish cheatsheet
-
-```bash
-cd kimi-k3
-vercel --prod
-```
-
-Optional pre-flight before publish:
-
-```bash
-scripts/smoke.sh  # validate against your current local BASE_URL first
-```
-
-### Launch steps (quick)
-
-```bash
-cd kimi-k3
-
-# 1. tests must be green (35 checks: schema, budget, storage, frontend contract)
-python3 -m pytest tests/ -q          # or: python3 -m unittest discover -s tests
-
-# 2. eyeball it locally, no API spend needed
-uvicorn app.main:app --reload
-#    open http://127.0.0.1:8000 and click "See a sample plan"
-
-# 3. ship
-vercel --prod
-
-# 4. verify the live deploy
-BASE_URL=https://kimi-k3-ashy.vercel.app scripts/smoke.sh
-```
-
-Step 4 should print `{"status":"ok"}` for health, a plan JSON body for both
-`/api/plan` calls, and the runtime config line. A `422` on `/api/plan` means the
-production alias is pointing at an older deploy — re-alias and re-run.
-
-**Demo links to have open when you launch:**
-
-- `https://kimi-k3-ashy.vercel.app/` — the hero
-- `https://kimi-k3-ashy.vercel.app/?demo=plan` — full plan + Action Plan Pack, zero API spend
-- `https://kimi-k3-ashy.vercel.app/?demo=compare` — three strategies side by side, zero API spend
-
-The `?demo=` links never call the model, so they cannot be broken by the daily
-budget cap or an upstream outage mid-demo.
-
-### Tomorrow launch checklist (minimum)
-
-Launch artifacts (checklist, facts sheet, runbook, post drafts) are kept outside
-this repo.
-
-- [ ] Deploy target is set (Railway/Render/Fly/Vercel-compatible platform).
-- [ ] Set env var: `FIREWORKS_API_KEY`.
-- [ ] Optional tuning envs: `FIREWORKS_MODEL`, `FIREWORKS_TEMPERATURE`, `FIREWORKS_MAX_TOKENS`.
-- [ ] Budget controls:
-  - `KIMI_DAILY_BUDGET_USD` (default `5`) to enforce daily spend ceiling.
-  - `KIMI_ESTIMATED_COST_USD` (default `0.02`) to estimate cost per generation call.
-  - On cap hit, `POST /api/plan` returns HTTP 429 with user-facing message (e.g. “Daily testing cap reached. ... try again tomorrow.”).
-- [ ] Set startup command to `uvicorn app.main:app --host 0.0.0.0 --port 10000`.
-- [ ] Run endpoint checks:
-  - `GET /api/health` returns ok.
-  - `POST /api/plan` succeeds with real API key.
-  - `GET /api/runs?limit=5` returns recent run rows.
+Verify a deploy with `BASE_URL=https://your-url bash scripts/smoke.sh`.
 
 ## Known behavior
 
-- If `FIREWORKS_API_KEY` is missing, plan generation returns a 502 with a clear error and records a failed run.
-- Tone input is normalized (`confident`, `short`, `business`) to one of `clear`, `concise`, `executive`.
-- If the model returns malformed output (JSON/prompt-shape issues), requests are rejected with a clear validation error.
+- Missing `FIREWORKS_API_KEY` → `/api/plan` returns 502 with a clear error and records a
+  failed run.
+- Tone input is normalised (`confident`, `short`, `business`) to `clear` / `concise` /
+  `executive`; risk and confidence values off-enum normalise to low/medium/high.
+- Malformed model output is sanitised, then rejected with a validation error if it still
+  doesn't fit the schema.
+- **Run history is ephemeral on Vercel** — SQLite lives on `/tmp` and is wiped on cold
+  start. Durable history needs a real database.
+- The app's inline script does not execute when the page is embedded in an `iframe`.
+
+## Screenshots
+
+`docs/screenshots/` — hero (desktop and 390px), the Action Plan Pack, the risk chart
+with its axis explained, compare mode, and the loading/empty/error states.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
