@@ -11,7 +11,17 @@ on every step, the assumptions it made, and your first three moves.
 **→ [kimi-k3-ashy.vercel.app](https://kimi-k3-ashy.vercel.app)** · no signup, free,
 and a demo mode that never touches the API.
 
+**[Read the write-up →](https://abhid.substack.com/p/i-wanted-to-try-kimi-k3-i-ended-up)** — why the score always said 100, and what replaced it.
+
 ![K3 Planner](docs/screenshots/12-hero-premium-desktop.png)
+
+## Watch it run
+
+[![K3 Planner — 90-second walkthrough](docs/video/poster.png)](https://github.com/abhid1234/kimi-k3/blob/main/docs/video/k3-planner-walkthrough.mp4)
+
+90 seconds, no narration: a goal typed in, the plan coming back, what the score is
+actually measuring, the risk chart, and compare mode running three strategies at once.
+[Play it on GitHub →](https://github.com/abhid1234/kimi-k3/blob/main/docs/video/k3-planner-walkthrough.mp4) · [download the MP4](https://github.com/abhid1234/kimi-k3/raw/main/docs/video/k3-planner-walkthrough.mp4) (4.7 MB)
 
 ---
 
@@ -38,7 +48,7 @@ risk — it filled a required field. Uniform ratings get penalised.
 The same sample plan now scores **93**, not 100. It can disagree with you, which is the
 only reason to show it.
 
-[Full write-up →](https://kimi-k3-ashy.vercel.app) *(blog link goes here once published)*
+[Full write-up →](https://abhid.substack.com/p/i-wanted-to-try-kimi-k3-i-ended-up)
 
 ## What "high / medium / low" means
 
